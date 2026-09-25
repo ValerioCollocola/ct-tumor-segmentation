@@ -1,4 +1,4 @@
-# CT-tumor-segmentation
+# CT Tumor Segmentation
 
 End-to-end 3D CT tumor segmentation project using Python, PyTorch, MONAI and medical imaging data.
 
@@ -32,6 +32,9 @@ ct-tumor-segmentation/
 │       │   └── liver_0.nii.gz
 │       └── label/
 │           └── liver_0.nii.gz
+├── docs/
+│   └── images/
+│       └── liver_0_tumor_overlay.png
 ├── notebooks/
 ├── outputs/
 ├── src/
@@ -53,3 +56,16 @@ ct-tumor-segmentation/
 ├── .gitignore
 ├── README.md
 └── requirements.txt
+```
+
+---
+
+## Tumor Visualization
+
+The visualization pipeline generates a three-panel figure:
+
+1. Original CT slice
+2. Tumor segmentation mask
+3. CT with tumor-mask overlay
+
+![Liver tumor visualization](docs/images/liver_0_tumor_overlay.png)
