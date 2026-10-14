@@ -1,25 +1,14 @@
 # CT Tumor Segmentation
 
-End-to-end 3D CT tumor segmentation project using Python, PyTorch, MONAI and medical imaging data.
+3D CT medical imaging project for liver tumor analysis, preprocessing and future deep learning segmentation.
 
 ## Overview
 
-This project focuses on 3D medical image analysis and tumor segmentation from CT volumes.
+This project explores the complete workflow for liver tumor segmentation from 3D CT imaging.
 
-The initial development phase uses the Medical Segmentation Decathlon `Task03_Liver` dataset and currently includes:
+The current phase focuses on medical image exploration and preprocessing using NIfTI volumes from the Medical Segmentation Decathlon Task03 Liver dataset.
 
-- loading NIfTI medical images
-- loading segmentation masks
-- inspecting CT volume shape and intensity range
-- extracting voxel spacing from the NIfTI affine matrix
-- identifying tumor voxels from ground-truth labels
-- automatically selecting the slice with the largest tumor area
-- visualizing CT, tumor mask and tumor overlay
-- estimating tumor volume from voxel spacing and segmentation labels
-
-The final goal is to develop a reproducible 3D tumor segmentation pipeline using deep learning.
-
----
+The long-term objective is to build a complete deep learning pipeline for 3D tumor segmentation using PyTorch and MONAI.
 
 ## Project Structure
 
@@ -34,7 +23,9 @@ ct-tumor-segmentation/
 │           └── liver_0.nii.gz
 ├── docs/
 │   └── images/
-│       └── liver_0_tumor_overlay.png
+│       ├── liver_0_preprocessing_comparison.png
+│       ├── liver_0_tumor_overlay.png
+│       └── liver_0_windowing_comparison.png
 ├── notebooks/
 ├── outputs/
 ├── src/
@@ -45,27 +36,318 @@ ct-tumor-segmentation/
 │   ├── data/
 │   │   ├── __init__.py
 │   │   └── io.py
+│   ├── preprocessing/
+│   │   ├── __init__.py
+│   │   ├── normalization.py
+│   │   └── windowing.py
 │   └── visualization/
 │       ├── __init__.py
+│       ├── compare_preprocessing.py
+│       ├── compare_windowing.py
 │       └── plot_slice.py
 ├── tests/
 │   ├── __init__.py
 │   ├── test_io.py
+│   ├── test_normalization.py
+│   ├── test_preprocessing_visualization.py
 │   ├── test_tumor_metrics.py
-│   └── test_visualization.py
+│   ├── test_visualization.py
+│   ├── test_windowing.py
+│   └── test_windowing_visualization.py
 ├── .gitignore
 ├── README.md
 └── requirements.txt
 ```
+## Dataset
 
----
+The project currently uses a sample case from the Medical Segmentation Decathlon Task03 Liver dataset.
+
+The sample includes:
+
+a 3D CT volume
+a corresponding segmentation mask
+liver annotations
+tumor annotations
+
+The CT volume has shape:
+
+(512, 512, 75)
+
+The segmentation labels are:
+
+0 = Background
+1 = Liver
+2 = Tumor
+
+## NIfTI Loading
+
+NIfTI medical imaging volumes are loaded using nibabel.
+
+The loading utility returns:
+
+the 3D image volume as a NumPy array
+the affine matrix associated with the NIfTI image
+
+For the current sample CT, the original intensity range is approximately:
+
+Minimum: -1024 HU
+Maximum: 1410 HU
+
+These values are expressed in Hounsfield Units, which are commonly used in CT imaging to represent tissue attenuation.
+
+## Voxel Spacing
+
+The voxel spacing extracted from the NIfTI affine matrix is approximately:
+
+0.703125 mm × 0.703125 mm × 5.0 mm
+
+This indicates that the volume is anisotropic.
+
+The in-plane resolution is approximately 0.7 mm, while the slice thickness along the third dimension is 5 mm.
+
+This difference will become important during voxel-spacing resampling before deep learning training.
+
+## Tumor Slice Detection
+
+The segmentation mask is analyzed to identify the axial slice containing the highest number of tumor voxels.
+
+For the current sample case:
+
+Slice index: 58
+Tumor voxels in slice: 538
+
+This allows the project to automatically select a representative tumor slice for visualization.
 
 ## Tumor Visualization
 
-The visualization pipeline generates a three-panel figure:
+The project currently generates a three-panel visualization containing:
 
-1. Original CT slice
-2. Tumor segmentation mask
-3. CT with tumor-mask overlay
+the original CT slice
+the ground-truth tumor segmentation mask
+the CT image with tumor mask overlay
 
-![Liver tumor visualization](docs/images/liver_0_tumor_overlay.png)
+The segmentation shown in this figure comes from the dataset ground-truth annotation.
+
+At this stage, the tumor segmentation is not produced by an artificial intelligence model.
+
+## Quantitative Tumor Analysis
+
+Tumor volume is estimated from the segmentation mask using the voxel dimensions extracted from the NIfTI affine matrix.
+
+For the current sample:
+
+Voxel spacing:
+[0.703125, 0.703125, 5.0] mm
+
+Tumor voxels:
+2591
+
+Tumor volume:
+6404.75 mm³
+
+Tumor volume:
+6.40 cm³
+
+The volume is calculated as:
+
+tumor voxel count × voxel volume
+
+The resulting value is derived from the dataset annotation and is intended for educational and research purposes only.
+
+## CT Intensity Windowing
+
+CT volumes contain a large range of Hounsfield Unit values.
+
+The original CT sample contains values approximately between:
+
+-1024 HU and 1410 HU
+
+To emphasize a selected range of soft tissues, CT intensity windowing is applied.
+
+The current parameters are:
+
+Window center: 50 HU
+Window width: 150 HU
+
+The corresponding intensity interval is:
+
+-25 HU to 125 HU
+
+The lower and upper limits are calculated as:
+
+lower = center - width / 2
+upper = center + width / 2
+
+Values outside this interval are clipped using NumPy.
+
+The comparison shows the difference between the original CT image and the windowed CT image.
+
+Windowing does not create new anatomical information. It restricts the displayed intensity range to improve contrast within selected tissues.
+
+## Intensity Normalization
+
+After windowing, the CT image is normalized using min-max normalization.
+
+The windowed intensity range:
+
+-25 to 125
+
+is transformed into:
+
+0 to 1
+
+using the formula:
+
+normalized = (image - min_value) / (max_value - min_value)
+
+The current preprocessing pipeline can therefore be summarized as:
+
+Original CT
+    ↓
+CT Windowing
+    ↓
+Intensity range: -25 to 125 HU
+    ↓
+Min-Max Normalization
+    ↓
+Intensity range: 0 to 1
+
+The complete preprocessing comparison is shown below:
+
+The windowed and normalized images appear visually very similar.
+
+This is expected because normalization changes the numerical representation of the intensity values without changing the underlying anatomical structures.
+
+## Current Preprocessing Pipeline
+
+The implemented preprocessing steps are currently:
+
+NIfTI CT Volume
+      ↓
+Load CT data
+      ↓
+Inspect HU intensity range
+      ↓
+CT intensity windowing
+      ↓
+Min-max normalization
+      ↓
+Normalized CT volume
+
+These operations prepare the CT data for later deep learning processing.
+
+## Current Python Stack
+
+The project currently uses:
+
+Python
+NumPy
+NiBabel
+Matplotlib
+
+Future phases are expected to introduce:
+
+PyTorch
+MONAI
+SimpleITK
+additional medical imaging tools
+segmentation evaluation metrics
+
+## Current Features
+ Load NIfTI CT volumes
+ Load segmentation masks
+ Inspect volume dimensions
+ Inspect Hounsfield Unit intensity range
+ Extract voxel spacing
+ Analyze segmentation labels
+ Identify tumor voxels
+ Detect the slice containing the largest tumor area
+ Visualize CT slices
+ Visualize tumor masks
+ Overlay tumor annotations
+ Calculate tumor volume
+ Apply CT intensity windowing
+ Normalize CT intensities to the range [0, 1]
+ Visualize the preprocessing pipeline
+ Resample volumes to consistent voxel spacing
+ Create train and validation splits
+ Extract 3D image patches
+ Apply data augmentation
+ Build PyTorch datasets
+ Train a 3D segmentation network
+ Evaluate segmentation performance
+
+## Roadmap
+Phase 1 — Medical Image Exploration
+ Load NIfTI CT volumes
+ Load segmentation masks
+ Inspect voxel spacing
+ Inspect segmentation labels
+ Visualize CT slices
+ Overlay tumor annotations
+ Detect tumor-rich slices
+ Calculate tumor volume
+Phase 2 — Preprocessing
+ CT intensity windowing
+ Intensity normalization
+ Voxel-spacing resampling
+ Train/validation split
+ 3D patch extraction
+ Data augmentation
+Phase 3 — Deep Learning
+ PyTorch dataset
+ MONAI transforms
+ 3D U-Net
+ Dice loss
+ Training pipeline
+ Validation pipeline
+ Checkpoint saving
+Phase 4 — Evaluation
+ Dice score
+ IoU / Jaccard index
+ Precision
+ Recall / Sensitivity
+ Lesion-wise evaluation
+ Error analysis
+Phase 5 — Clinical Imaging Workflow
+ DICOM loading
+ DICOM series reconstruction
+ Hounsfield Unit handling
+ DICOM SEG / RTSTRUCT exploration
+ Inference on clinical-style imaging data
+
+## Educational Goals
+
+The project is also intended as a practical learning path covering:
+
+Python programming for medical imaging
+NumPy array manipulation
+3D medical image formats
+NIfTI metadata and affine matrices
+Hounsfield Units
+CT windowing
+intensity normalization
+medical image visualization
+quantitative image analysis
+preprocessing for deep learning
+3D semantic segmentation
+
+## Future Direction
+
+The next preprocessing step will focus on voxel-spacing resampling.
+
+The current CT volume has anisotropic spacing:
+
+0.703125 × 0.703125 × 5.0 mm
+
+Future processing will resample the CT volume and segmentation mask toward a more consistent spatial resolution.
+
+Particular attention will be required when resampling segmentation masks, because discrete label values must be preserved.
+
+After preprocessing is completed, the project will move toward a 3D deep learning segmentation pipeline using PyTorch and MONAI.
+
+## Disclaimer
+
+This project is developed for educational and research purposes only.
+
+It is not a medical device and must not be used for clinical diagnosis, treatment planning or medical decision-making.
