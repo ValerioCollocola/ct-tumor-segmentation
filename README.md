@@ -256,11 +256,80 @@ The comparison below shows the CT volume and tumor mask before and after voxel-s
 
 ![Voxel-spacing resampling comparison](docs/images/liver_0_resampling_comparison.png)
 
+## 3D Tumor Patch Extraction
+
+To reduce memory requirements during future 3D deep learning training, smaller volumetric patches are extracted from the resampled CT volume.
+
+The current patch size is:
+
+96 × 96 × 64
+
+The tumor center is identified from the ground-truth segmentation mask using label value:
+
+2 = Tumor
+
+A corresponding CT patch and segmentation patch are then extracted around the tumor region.
+
+For the current sample:
+
+Tumor center:
+(222, 168, 123)
+
+Image patch shape:
+(96, 96, 64)
+
+Label patch shape:
+(96, 96, 64)
+
+Tumor voxels inside patch:
+1334
+
+Boundary handling ensures that the requested patch size is preserved even when the tumor center is close to the edge of the volume.
+
+The visualization below shows the tumor-rich slice inside the extracted 3D patch:
+
+![3D tumor patch visualization](docs/images/liver_0_tumor_patch.png)
+
+## Data Augmentation
+
+To increase variability in the training data and reduce overfitting, data augmentation is applied to the extracted 3D patches.
+
+The current implementation uses 3D flipping.
+
+The same spatial transformation is applied to both the CT image patch and the corresponding segmentation mask in order to preserve image-label alignment.
+
+For the current tumor patch:
+
+Original image patch shape:
+(96, 96, 64)
+
+Augmented image patch shape:
+(96, 96, 64)
+
+The segmentation labels are preserved:
+
+Original label values:
+[0, 1, 2]
+
+Augmented label values:
+[0, 1, 2]
+
+The number of tumor voxels is also preserved:
+
+Original tumor voxels:
+1334
+
+Augmented tumor voxels:
+1334
+
+This confirms that the spatial augmentation changes the orientation of the patch without altering its dimensions or segmentation class information.
+More advanced augmentation strategies, such as random rotations, intensity perturbations and MONAI-based transforms, will be introduced in later deep learning stages.
+
 ## Current Preprocessing Pipeline
 
 The implemented preprocessing steps are currently:
 
-NNIfTI CT Volume
+NIfTI CT Volume
       ↓
 Load CT data
       ↓
@@ -272,7 +341,11 @@ Min-max normalization
       ↓
 Voxel-spacing resampling
       ↓
-Preprocessed CT volume
+3D patch extraction
+      ↓
+Data augmentation
+      ↓
+Preprocessed training samples
 
 These operations prepare the CT data for later deep learning processing.
 
@@ -336,9 +409,9 @@ segmentation evaluation metrics
 - [x] CT intensity windowing
 - [x] Intensity normalization
 - [x] Voxel-spacing resampling
-- [ ] Train/validation split
-- [ ] 3D patch extraction
-- [ ] Data augmentation
+- [x] Train/validation split
+- [x] 3D patch extraction
+- [x] Data augmentation
 
 ### Phase 3 — Deep Learning
 
