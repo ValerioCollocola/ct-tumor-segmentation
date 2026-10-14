@@ -2,3 +2,4 @@ numpy
 nibabel
 matplotlib
 jupyter
+scipy

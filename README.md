@@ -218,11 +218,49 @@ The windowed and normalized images appear visually very similar.
 
 This is expected because normalization changes the numerical representation of the intensity values without changing the underlying anatomical structures.
 
+## Voxel-Spacing Resampling
+
+The original CT volume has anisotropic voxel spacing:
+
+0.703125 × 0.703125 × 5.0 mm
+
+The volume is resampled to:
+
+1.0 × 1.0 × 2.5 mm
+
+The original shape:
+
+(512, 512, 75)
+
+becomes:
+
+(360, 360, 150)
+
+The corresponding zoom factors are:
+
+[0.703125, 0.703125, 2.0]
+
+Linear interpolation is used for CT intensity values, while nearest-neighbor interpolation is used for segmentation masks.
+
+Nearest-neighbor interpolation is important for segmentation masks because it preserves the discrete class labels.
+
+Before resampling:
+
+[0, 1, 2]
+
+After resampling:
+
+[0, 1, 2]
+
+The comparison below shows the CT volume and tumor mask before and after voxel-spacing resampling:
+
+![Voxel-spacing resampling comparison](docs/images/liver_0_resampling_comparison.png)
+
 ## Current Preprocessing Pipeline
 
 The implemented preprocessing steps are currently:
 
-NIfTI CT Volume
+NNIfTI CT Volume
       ↓
 Load CT data
       ↓
@@ -232,7 +270,9 @@ CT intensity windowing
       ↓
 Min-max normalization
       ↓
-Normalized CT volume
+Voxel-spacing resampling
+      ↓
+Preprocessed CT volume
 
 These operations prepare the CT data for later deep learning processing.
 
@@ -254,6 +294,7 @@ additional medical imaging tools
 segmentation evaluation metrics
 
 ## Current Features
+
  Load NIfTI CT volumes
  Load segmentation masks
  Inspect volume dimensions
@@ -278,43 +319,53 @@ segmentation evaluation metrics
  Evaluate segmentation performance
 
 ## Roadmap
-Phase 1 — Medical Image Exploration
- Load NIfTI CT volumes
- Load segmentation masks
- Inspect voxel spacing
- Inspect segmentation labels
- Visualize CT slices
- Overlay tumor annotations
- Detect tumor-rich slices
- Calculate tumor volume
-Phase 2 — Preprocessing
- CT intensity windowing
- Intensity normalization
- Voxel-spacing resampling
- Train/validation split
- 3D patch extraction
- Data augmentation
-Phase 3 — Deep Learning
- PyTorch dataset
- MONAI transforms
- 3D U-Net
- Dice loss
- Training pipeline
- Validation pipeline
- Checkpoint saving
-Phase 4 — Evaluation
- Dice score
- IoU / Jaccard index
- Precision
- Recall / Sensitivity
- Lesion-wise evaluation
- Error analysis
-Phase 5 — Clinical Imaging Workflow
- DICOM loading
- DICOM series reconstruction
- Hounsfield Unit handling
- DICOM SEG / RTSTRUCT exploration
- Inference on clinical-style imaging data
+
+### Phase 1 — Medical Image Exploration
+
+- [x] Load NIfTI CT volumes
+- [x] Load segmentation masks
+- [x] Inspect voxel spacing
+- [x] Inspect segmentation labels
+- [x] Visualize CT slices
+- [x] Overlay tumor annotations
+- [x] Detect tumor-rich slices
+- [x] Calculate tumor volume
+
+### Phase 2 — Preprocessing
+
+- [x] CT intensity windowing
+- [x] Intensity normalization
+- [x] Voxel-spacing resampling
+- [ ] Train/validation split
+- [ ] 3D patch extraction
+- [ ] Data augmentation
+
+### Phase 3 — Deep Learning
+
+- [ ] PyTorch dataset
+- [ ] MONAI transforms
+- [ ] 3D U-Net
+- [ ] Dice loss
+- [ ] Training pipeline
+- [ ] Validation pipeline
+- [ ] Checkpoint saving
+
+### Phase 4 — Evaluation
+
+- [ ] Dice score
+- [ ] IoU / Jaccard index
+- [ ] Precision
+- [ ] Recall / Sensitivity
+- [ ] Lesion-wise evaluation
+- [ ] Error analysis
+
+### Phase 5 — Clinical Imaging Workflow
+
+- [ ] DICOM loading
+- [ ] DICOM series reconstruction
+- [ ] Hounsfield Unit handling
+- [ ] DICOM SEG / RTSTRUCT exploration
+- [ ] Inference on clinical-style imaging data
 
 ## Educational Goals
 
