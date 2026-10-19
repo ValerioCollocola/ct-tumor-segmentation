@@ -3,3 +3,4 @@ nibabel
 matplotlib
 jupyter
 scipy
+torch

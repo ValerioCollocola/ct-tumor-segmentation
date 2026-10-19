@@ -1,141 +1,210 @@
 # CT Tumor Segmentation
 
-3D CT medical imaging project for liver tumor analysis, preprocessing and future deep learning segmentation.
+End-to-end 3D CT tumor segmentation project developed in Python and PyTorch using medical imaging data from the Medical Segmentation Decathlon.
+
+The project covers the complete workflow from NIfTI image loading and preprocessing to 3D deep learning, quantitative evaluation, lesion-wise analysis, visualization, and post-processing.
+
+> This project is developed for educational and research purposes only.  
+> It is not a medical device and must not be used for clinical diagnosis or treatment decisions.
+
 
 ## Overview
 
-This project explores the complete workflow for liver tumor segmentation from 3D CT imaging.
+The goal of this project is to build and study a complete 3D medical image segmentation pipeline for liver tumor segmentation from CT scans.
 
-The current phase focuses on medical image exploration and preprocessing using NIfTI volumes from the Medical Segmentation Decathlon Task03 Liver dataset.
+The project currently includes:
 
-The long-term objective is to build a complete deep learning pipeline for 3D tumor segmentation using PyTorch and MONAI.
+- NIfTI image loading
+- CT intensity inspection
+- Hounsfield Unit windowing
+- intensity normalization
+- voxel-spacing resampling
+- patient-level train/validation splitting
+- 3D tumor-centered patch extraction
+- data augmentation
+- PyTorch Dataset and DataLoader
+- custom 3D U-Net
+- multiclass segmentation experiments
+- binary tumor segmentation experiments
+- combined segmentation losses
+- model checkpointing
+- voxel-wise evaluation
+- lesion-wise evaluation
+- connected-component post-processing
+- visual error analysis
+- CSV evaluation reporting
+
 
 ## Project Structure
 
 ```text
 ct-tumor-segmentation/
+│
 ├── configs/
+│
 ├── data/
-│   └── sample/
-│       ├── image/
-│       │   └── liver_0.nii.gz
-│       └── label/
-│           └── liver_0.nii.gz
+│   ├── sample/
+│   │   ├── image/
+│   │   └── label/
+│   │
+│   └── multicase/
+│       ├── images/
+│       └── labels/
+│
 ├── docs/
 │   └── images/
-│       ├── liver_0_preprocessing_comparison.png
-│       ├── liver_0_tumor_overlay.png
-│       └── liver_0_windowing_comparison.png
+│
 ├── notebooks/
+│
 ├── outputs/
+│   ├── checkpoints/
+│   └── evaluation/
+│
 ├── src/
-│   ├── __init__.py
 │   ├── analysis/
-│   │   ├── __init__.py
-│   │   └── tumor_metrics.py
 │   ├── data/
-│   │   ├── __init__.py
-│   │   └── io.py
+│   ├── evaluation/
+│   ├── models/
 │   ├── preprocessing/
-│   │   ├── __init__.py
-│   │   ├── normalization.py
-│   │   └── windowing.py
+│   ├── training/
 │   └── visualization/
-│       ├── __init__.py
-│       ├── compare_preprocessing.py
-│       ├── compare_windowing.py
-│       └── plot_slice.py
+│
 ├── tests/
-│   ├── __init__.py
-│   ├── test_io.py
-│   ├── test_normalization.py
-│   ├── test_preprocessing_visualization.py
-│   ├── test_tumor_metrics.py
-│   ├── test_visualization.py
-│   ├── test_windowing.py
-│   └── test_windowing_visualization.py
+│
 ├── .gitignore
 ├── README.md
 └── requirements.txt
 ```
+
+
 ## Dataset
 
-The project currently uses a sample case from the Medical Segmentation Decathlon Task03 Liver dataset.
-
-The sample includes:
-
-a 3D CT volume
-a corresponding segmentation mask
-liver annotations
-tumor annotations
-
-The CT volume has shape:
-
-(512, 512, 75)
+The project uses the **Task03 Liver** dataset from the Medical Segmentation Decathlon.
 
 The segmentation labels are:
 
+```text
 0 = Background
 1 = Liver
 2 = Tumor
+```
+
+The initial development was performed on `liver_0`, followed by a small multi-patient subset containing:
+
+```text
+liver_0
+liver_1
+liver_2
+liver_3
+liver_4
+liver_5
+liver_6
+liver_7
+liver_8
+liver_9
+```
+
+The current experimental split uses:
+
+```text
+8 training patients
+2 validation patients
+```
+
+The split is performed at patient level in order to avoid patient leakage between training and validation data.
+
 
 ## NIfTI Loading
 
-NIfTI medical imaging volumes are loaded using nibabel.
+Medical volumes are loaded using `nibabel`.
 
-The loading utility returns:
+The loader returns:
 
-the 3D image volume as a NumPy array
-the affine matrix associated with the NIfTI image
+```text
+3D NumPy volume
++
+NIfTI affine matrix
+```
 
-For the current sample CT, the original intensity range is approximately:
+Example CT volume:
 
-Minimum: -1024 HU
-Maximum: 1410 HU
+```text
+Shape:
+(512, 512, 75)
 
-These values are expressed in Hounsfield Units, which are commonly used in CT imaging to represent tissue attenuation.
+Intensity range:
+-1024 HU to 1410 HU
+```
+
+Example segmentation mask:
+
+```text
+Shape:
+(512, 512, 75)
+
+Labels:
+[0, 1, 2]
+```
+
 
 ## Voxel Spacing
 
-The voxel spacing extracted from the NIfTI affine matrix is approximately:
+The original voxel spacing for the initial CT sample is approximately:
 
-0.703125 mm × 0.703125 mm × 5.0 mm
+```text
+0.703125 mm
+0.703125 mm
+5.000000 mm
+```
 
-This indicates that the volume is anisotropic.
+This shows that the original volume is anisotropic, with much larger spacing along the slice direction.
 
-The in-plane resolution is approximately 0.7 mm, while the slice thickness along the third dimension is 5 mm.
-
-This difference will become important during voxel-spacing resampling before deep learning training.
 
 ## Tumor Slice Detection
 
-The segmentation mask is analyzed to identify the axial slice containing the highest number of tumor voxels.
+The ground-truth segmentation mask is analyzed to identify the axial slice containing the largest number of tumor voxels.
 
-For the current sample case:
+For the initial sample:
 
-Slice index: 58
-Tumor voxels in slice: 538
+```text
+Maximum tumor slice:
+58
 
-This allows the project to automatically select a representative tumor slice for visualization.
+Tumor voxels in slice:
+538
+```
+
+This operation is based on the provided ground-truth annotation and is not an AI prediction.
+
 
 ## Tumor Visualization
 
-The project currently generates a three-panel visualization containing:
+The project includes visualization utilities for:
 
-the original CT slice
-the ground-truth tumor segmentation mask
-the CT image with tumor mask overlay
+- CT slices
+- tumor masks
+- CT + tumor overlays
+- 3D tumor-centered patches
+- binary model predictions
 
-The segmentation shown in this figure comes from the dataset ground-truth annotation.
+Example visualization:
 
-At this stage, the tumor segmentation is not produced by an artificial intelligence model.
+![Liver tumor visualization](docs/images/liver_0_tumor_overlay.png)
+
 
 ## Quantitative Tumor Analysis
 
-Tumor volume is estimated from the segmentation mask using the voxel dimensions extracted from the NIfTI affine matrix.
+Tumor volume can be estimated from:
 
-For the current sample:
+```text
+number of tumor voxels
+×
+physical voxel volume
+```
 
+For the initial sample:
+
+```text
 Voxel spacing:
 [0.703125, 0.703125, 5.0] mm
 
@@ -147,249 +216,585 @@ Tumor volume:
 
 Tumor volume:
 6.40 cm³
+```
 
-The volume is calculated as:
+This volume is derived from the dataset ground-truth segmentation and image spacing.
 
-tumor voxel count × voxel volume
+It must not be interpreted as an independent clinical measurement.
 
-The resulting value is derived from the dataset annotation and is intended for educational and research purposes only.
 
 ## CT Intensity Windowing
 
-CT volumes contain a large range of Hounsfield Unit values.
+CT images are represented in Hounsfield Units.
 
-The original CT sample contains values approximately between:
+An example soft-tissue window is applied using:
 
--1024 HU and 1410 HU
+```text
+Window center:
+50 HU
 
-To emphasize a selected range of soft tissues, CT intensity windowing is applied.
+Window width:
+150 HU
+```
 
-The current parameters are:
+This corresponds to:
 
-Window center: 50 HU
-Window width: 150 HU
+```text
+Lower bound:
+-25 HU
 
-The corresponding intensity interval is:
+Upper bound:
+125 HU
+```
 
--25 HU to 125 HU
+Values outside this range are clipped.
 
-The lower and upper limits are calculated as:
+Example:
 
-lower = center - width / 2
-upper = center + width / 2
+```text
+Original range:
+-1024 to 1410 HU
 
-Values outside this interval are clipped using NumPy.
+Windowed range:
+-25 to 125 HU
+```
 
-The comparison shows the difference between the original CT image and the windowed CT image.
-
-Windowing does not create new anatomical information. It restricts the displayed intensity range to improve contrast within selected tissues.
 
 ## Intensity Normalization
 
-After windowing, the CT image is normalized using min-max normalization.
+After CT windowing, image intensities are normalized to approximately:
 
-The windowed intensity range:
+```text
+0.0 to 1.0
+```
 
--25 to 125
+This provides a more suitable input range for neural network training.
 
-is transformed into:
-
-0 to 1
-
-using the formula:
-
-normalized = (image - min_value) / (max_value - min_value)
-
-The current preprocessing pipeline can therefore be summarized as:
-
-Original CT
-    ↓
-CT Windowing
-    ↓
-Intensity range: -25 to 125 HU
-    ↓
-Min-Max Normalization
-    ↓
-Intensity range: 0 to 1
-
-The complete preprocessing comparison is shown below:
-
-The windowed and normalized images appear visually very similar.
-
-This is expected because normalization changes the numerical representation of the intensity values without changing the underlying anatomical structures.
 
 ## Voxel-Spacing Resampling
 
-The original CT volume has anisotropic voxel spacing:
+CT images and segmentation masks are resampled to a common target spacing:
 
-0.703125 × 0.703125 × 5.0 mm
-
-The volume is resampled to:
-
+```text
 1.0 × 1.0 × 2.5 mm
+```
 
-The original shape:
+Example:
 
+```text
+Original shape:
 (512, 512, 75)
 
-becomes:
-
+Resampled shape:
 (360, 360, 150)
+```
 
-The corresponding zoom factors are:
+Different interpolation strategies are used for images and labels to preserve segmentation classes.
 
-[0.703125, 0.703125, 2.0]
 
-Linear interpolation is used for CT intensity values, while nearest-neighbor interpolation is used for segmentation masks.
+## Patient-Level Train / Validation Split
 
-Nearest-neighbor interpolation is important for segmentation masks because it preserves the discrete class labels.
+Cases are automatically discovered from the dataset directory.
 
-Before resampling:
+A reproducible patient-level split is generated using a fixed random seed.
 
-[0, 1, 2]
+Current experimental split:
 
-After resampling:
+```text
+Training cases:
+8
 
-[0, 1, 2]
+Validation cases:
+2
 
-The comparison below shows the CT volume and tumor mask before and after voxel-spacing resampling:
+Overlap:
+0
+```
 
-![Voxel-spacing resampling comparison](docs/images/liver_0_resampling_comparison.png)
+This ensures that images from the same patient do not appear in both sets.
+
 
 ## 3D Tumor Patch Extraction
 
-To reduce memory requirements during future 3D deep learning training, smaller volumetric patches are extracted from the resampled CT volume.
+To reduce computational and memory requirements, smaller 3D patches are extracted from the resampled volumes.
 
-The current patch size is:
+Current patch size:
 
+```text
 96 × 96 × 64
+```
 
-The tumor center is identified from the ground-truth segmentation mask using label value:
+The tumor center is calculated from the ground-truth mask using:
 
-2 = Tumor
+```text
+label = 2
+```
 
-A corresponding CT patch and segmentation patch are then extracted around the tumor region.
+A corresponding CT patch and segmentation patch are extracted around the same center.
 
-For the current sample:
+Example:
 
+```text
 Tumor center:
 (222, 168, 123)
 
-Image patch shape:
+Image patch:
 (96, 96, 64)
 
-Label patch shape:
+Label patch:
 (96, 96, 64)
+```
 
-Tumor voxels inside patch:
-1334
+The extracted patch preserves the original segmentation classes:
 
-Boundary handling ensures that the requested patch size is preserved even when the tumor center is close to the edge of the volume.
+```text
+[0, 1, 2]
+```
 
-The visualization below shows the tumor-rich slice inside the extracted 3D patch:
 
-![3D tumor patch visualization](docs/images/liver_0_tumor_patch.png)
+## Multi-Patch Tumor-Aware Sampling
+
+A single tumor-centered patch per patient was initially used.
+
+To increase spatial variability, multiple shifted centers are now generated around the tumor center.
+
+Current configuration:
+
+```text
+5 patches per training patient
+8 training patients
+40 training patches
+```
+
+The spatial shifts remain close to the tumor center so that each extracted training patch still contains tumor voxels.
+
+Example for `liver_0`:
+
+```text
+Patch 1: 1334 tumor voxels
+Patch 2: 1154 tumor voxels
+Patch 3: 1334 tumor voxels
+Patch 4: 1228 tumor voxels
+Patch 5: 1246 tumor voxels
+```
+
 
 ## Data Augmentation
 
 To increase variability in the training data and reduce overfitting, data augmentation is applied to the extracted 3D patches.
 
-The current implementation uses 3D flipping.
+The current implementation includes spatial 3D flipping.
 
-The same spatial transformation is applied to both the CT image patch and the corresponding segmentation mask in order to preserve image-label alignment.
+The same transformation is applied to both:
 
-For the current tumor patch:
+```text
+CT image patch
++
+segmentation mask
+```
 
-Original image patch shape:
-(96, 96, 64)
+in order to preserve image-label alignment.
 
-Augmented image patch shape:
-(96, 96, 64)
+The augmentation preserves:
 
-The segmentation labels are preserved:
+- patch dimensions
+- segmentation class values
+- tumor voxel count
 
-Original label values:
-[0, 1, 2]
+More advanced augmentation strategies may be introduced in later experiments.
 
-Augmented label values:
-[0, 1, 2]
-
-The number of tumor voxels is also preserved:
-
-Original tumor voxels:
-1334
-
-Augmented tumor voxels:
-1334
-
-This confirms that the spatial augmentation changes the orientation of the patch without altering its dimensions or segmentation class information.
-More advanced augmentation strategies, such as random rotations, intensity perturbations and MONAI-based transforms, will be introduced in later deep learning stages.
 
 ## Current Preprocessing Pipeline
 
-The implemented preprocessing steps are currently:
+The current preprocessing workflow is:
 
-NIfTI CT Volume
-      ↓
-Load CT data
-      ↓
-Inspect HU intensity range
-      ↓
-CT intensity windowing
-      ↓
-Min-max normalization
-      ↓
-Voxel-spacing resampling
-      ↓
-3D patch extraction
-      ↓
-Data augmentation
-      ↓
-Preprocessed training samples
+```text
+NIfTI loading
+        ↓
+CT windowing
+        ↓
+intensity normalization
+        ↓
+voxel-spacing resampling
+        ↓
+patient-level split
+        ↓
+tumor center detection
+        ↓
+multi-patch extraction
+        ↓
+data augmentation
+        ↓
+PyTorch Dataset
+        ↓
+DataLoader
+```
 
-These operations prepare the CT data for later deep learning processing.
+
+## PyTorch Dataset and DataLoader
+
+The preprocessed NumPy patches are converted into PyTorch tensors.
+
+Image tensor shape:
+
+```text
+[1, 96, 96, 64]
+```
+
+Label tensor shape:
+
+```text
+[96, 96, 64]
+```
+
+Using a DataLoader with batch size 2 produces:
+
+```text
+Image batch:
+[2, 1, 96, 96, 64]
+
+Label batch:
+[2, 96, 96, 64]
+```
+
+
+## 3D U-Net
+
+A custom 3D U-Net architecture is implemented in PyTorch.
+
+Example input:
+
+```text
+[2, 1, 96, 96, 64]
+```
+
+For the original three-class segmentation experiment:
+
+```text
+Output:
+[2, 3, 96, 96, 64]
+```
+
+where the three output channels represent:
+
+```text
+0 = Background
+1 = Liver
+2 = Tumor
+```
+
+
+## Segmentation Loss
+
+The multiclass training experiments use a combination of:
+
+```text
+Cross Entropy Loss
++
+Dice Loss
++
+Tumor-specific Dice Loss
+```
+
+Class weighting was explored because the tumor represents only a small fraction of the training voxels.
+
+For the multi-patch training set, the approximate class distribution is:
+
+```text
+Background:
+48.19%
+
+Liver:
+46.71%
+
+Tumor:
+5.10%
+```
+
+
+## Multiclass Training Experiments
+
+The multiclass 3D U-Net successfully reduced training and validation loss.
+
+However, tumor Dice remained approximately zero even after:
+
+- class weighting
+- tumor-specific Dice loss
+- multiple tumor-aware patches
+- longer training
+
+Additional probability-based analysis showed that the model assigned higher tumor probability to real tumor voxels than to non-tumor voxels, but the tumor class rarely won the final multiclass `argmax`.
+
+This motivated a controlled binary segmentation experiment.
+
+
+## Binary Tumor Segmentation
+
+The segmentation problem was reformulated as:
+
+```text
+0 = Non-tumor
+1 = Tumor
+```
+
+Original labels were converted as:
+
+```text
+0 → 0
+1 → 0
+2 → 1
+```
+
+The number of tumor voxels is preserved during conversion.
+
+The same 3D U-Net architecture is reused with:
+
+```python
+num_classes=2
+```
+
+The binary training loss combines:
+
+```text
+Weighted Cross Entropy
++
+Tumor Dice Loss
+```
+
+
+## Binary Multi-Patient Training
+
+The binary model was trained using:
+
+```text
+8 training patients
+40 tumor-aware training patches
+2 validation patients
+10 epochs
+```
+
+At epoch 10:
+
+```text
+Train Tumor Dice:
+0.1322
+
+Validation Tumor Dice:
+0.2148
+```
+
+The binary formulation therefore produced the first clearly non-zero hard tumor Dice on held-out validation data.
+
+
+## Model Checkpointing
+
+Two checkpoint strategies are supported:
+
+```text
+Best validation loss
+```
+
+and:
+
+```text
+Best validation Tumor Dice
+```
+
+This distinction is important because the epoch with the lowest validation loss is not necessarily the epoch with the best tumor segmentation performance.
+
+
+## Phase 4 — Evaluation
+
+The binary tumor segmentation model was evaluated on a patient-level validation split using both voxel-wise and lesion-wise metrics.
+
+The current validation subset contains only two patients and is therefore intended as an exploratory technical evaluation rather than a reliable estimate of clinical performance.
+
+
+### Voxel-Wise Metrics
+
+The following metrics are currently implemented:
+
+- Dice score
+- Intersection over Union (IoU / Jaccard)
+- Precision
+- Recall / Sensitivity
+
+Using the checkpoint selected by validation Tumor Dice, the validation cases showed markedly different behavior.
+
+| Case | Dice | IoU | Precision | Recall | GT Tumor Voxels | Predicted Tumor Voxels |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| liver_3 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 529 | 0 |
+| liver_7 | 0.4296 | 0.2735 | 0.9875 | 0.2745 | 6350 | 1765 |
+
+The results highlight substantial case-to-case variability.
+
+For `liver_3`, the lesion is completely missed.
+
+For `liver_7`, the model localizes part of the tumor with very high precision but relatively low recall, indicating a conservative segmentation that captures only part of the lesion volume.
+
+
+### Lesion-Wise Evaluation
+
+Connected-component analysis with 3D 26-connectivity was introduced to evaluate tumor detection at lesion level.
+
+| Case | GT Lesions | Predicted Lesions | Detected | Missed | False Positive Lesions | Lesion Sensitivity |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| liver_3 | 1 | 0 | 0 | 1 | 0 | 0.0000 |
+| liver_7 | 3 | 6 | 2 | 1 | 3 | 0.6667 |
+
+This analysis provides information that complements voxel-wise metrics.
+
+A model may only partially segment a lesion while still correctly detecting it as an object.
+
+
+### Lesion Size Analysis
+
+Connected-component sizes were analyzed to distinguish substantial predictions from very small isolated fragments.
+
+For `liver_7`, the ground-truth lesions contained:
+
+```text
+GT lesion 1: 4796 voxels
+GT lesion 2: 1537 voxels
+GT lesion 3:   17 voxels
+```
+
+The raw prediction contained:
+
+```text
+Pred lesion 1:   19 voxels
+Pred lesion 2:   40 voxels
+Pred lesion 3: 1381 voxels
+Pred lesion 4:  323 voxels
+Pred lesion 5:    1 voxel
+Pred lesion 6:    1 voxel
+```
+
+This analysis showed that several predicted components were extremely small and likely represented isolated segmentation fragments.
+
+
+### Connected-Component Post-Processing
+
+Small predicted connected components were analyzed as possible false-positive fragments.
+
+An exploratory minimum connected-component size of:
+
+```text
+20 voxels
+```
+
+was used as a post-processing filter.
+
+For `liver_7`:
+
+| Metric | Raw | Filtered |
+| --- | ---: | ---: |
+| Dice | 0.4296 | 0.4307 |
+| IoU | 0.2735 | 0.2744 |
+| Precision | 0.9875 | 0.9994 |
+| Recall | 0.2745 | 0.2745 |
+| Predicted lesions | 6 | 3 |
+| Detected lesions | 2 | 2 |
+| Missed lesions | 1 | 1 |
+| False-positive lesions | 3 | 0 |
+| Lesion sensitivity | 0.6667 | 0.6667 |
+
+The post-processing step removed small false-positive components without reducing recall or lesion sensitivity.
+
+The minimum lesion-size threshold was selected during exploratory analysis and must not be interpreted as a clinically validated parameter.
+
+
+### Error Analysis
+
+Visual inspection confirmed two different failure modes.
+
+#### Validation Case — liver_3
+
+The binary model completely misses the tumor in this validation case.
+
+![Binary tumor segmentation - liver_3](docs/images/liver_3_binary_prediction.png)
+
+#### Validation Case — liver_7
+
+The model correctly localizes part of the tumor but substantially under-segments the lesion.
+
+![Binary tumor segmentation - liver_7](docs/images/liver_7_binary_prediction.png)
+
+These experiments demonstrate why decreasing validation loss alone is not sufficient to assess medical image segmentation quality.
+
+Voxel-wise metrics, lesion-wise metrics, connected-component analysis, visual inspection, and per-case analysis provide complementary information.
+
+All evaluation results are exploratory and are based on a very small validation subset.
+
+
+## Evaluation Outputs
+
+Structured evaluation results are saved as CSV files.
+
+Current outputs include:
+
+```text
+outputs/evaluation/binary_validation_metrics.csv
+outputs/evaluation/binary_validation_raw_vs_filtered.csv
+```
+
+These files contain patient-level metrics and allow reproducible comparison of raw and post-processed predictions.
+
 
 ## Current Python Stack
 
 The project currently uses:
 
+```text
 Python
 NumPy
 NiBabel
 Matplotlib
-
-Future phases are expected to introduce:
-
+SciPy
 PyTorch
-MONAI
-SimpleITK
-additional medical imaging tools
-segmentation evaluation metrics
+```
+
+Additional libraries may be introduced in later phases for medical imaging workflows and advanced deep learning pipelines.
+
 
 ## Current Features
 
- Load NIfTI CT volumes
- Load segmentation masks
- Inspect volume dimensions
- Inspect Hounsfield Unit intensity range
- Extract voxel spacing
- Analyze segmentation labels
- Identify tumor voxels
- Detect the slice containing the largest tumor area
- Visualize CT slices
- Visualize tumor masks
- Overlay tumor annotations
- Calculate tumor volume
- Apply CT intensity windowing
- Normalize CT intensities to the range [0, 1]
- Visualize the preprocessing pipeline
- Resample volumes to consistent voxel spacing
- Create train and validation splits
- Extract 3D image patches
- Apply data augmentation
- Build PyTorch datasets
- Train a 3D segmentation network
- Evaluate segmentation performance
+- [x] NIfTI loading
+- [x] CT volume inspection
+- [x] segmentation mask loading
+- [x] voxel-spacing analysis
+- [x] CT slice visualization
+- [x] tumor mask overlay
+- [x] tumor volume calculation
+- [x] CT intensity windowing
+- [x] intensity normalization
+- [x] voxel-spacing resampling
+- [x] patient-level train/validation split
+- [x] 3D tumor-centered patch extraction
+- [x] multi-patch tumor-aware sampling
+- [x] 3D data augmentation
+- [x] PyTorch Dataset
+- [x] PyTorch DataLoader
+- [x] custom 3D U-Net
+- [x] multiclass loss
+- [x] tumor-aware loss
+- [x] optimizer and backpropagation
+- [x] training loop
+- [x] validation loop
+- [x] checkpoint saving/loading
+- [x] multiclass segmentation experiments
+- [x] binary tumor segmentation
+- [x] Dice evaluation
+- [x] IoU/Jaccard evaluation
+- [x] Precision evaluation
+- [x] Recall/Sensitivity evaluation
+- [x] per-case evaluation
+- [x] visual error analysis
+- [x] lesion-wise evaluation
+- [x] lesion-size analysis
+- [x] connected-component post-processing
+- [x] CSV evaluation reporting
+
 
 ## Roadmap
 
@@ -398,80 +803,83 @@ segmentation evaluation metrics
 - [x] Load NIfTI CT volumes
 - [x] Load segmentation masks
 - [x] Inspect voxel spacing
-- [x] Inspect segmentation labels
 - [x] Visualize CT slices
 - [x] Overlay tumor annotations
-- [x] Detect tumor-rich slices
 - [x] Calculate tumor volume
+
 
 ### Phase 2 — Preprocessing
 
 - [x] CT intensity windowing
-- [x] Intensity normalization
-- [x] Voxel-spacing resampling
-- [x] Train/validation split
+- [x] intensity normalization
+- [x] voxel-spacing resampling
+- [x] train/validation split
 - [x] 3D patch extraction
-- [x] Data augmentation
+- [x] tumor-aware multi-patch sampling
+- [x] data augmentation
+
 
 ### Phase 3 — Deep Learning
 
-- [ ] PyTorch dataset
-- [ ] MONAI transforms
-- [ ] 3D U-Net
-- [ ] Dice loss
-- [ ] Training pipeline
-- [ ] Validation pipeline
-- [ ] Checkpoint saving
+- [x] PyTorch Dataset
+- [x] DataLoader
+- [x] custom 3D U-Net
+- [x] Dice-based losses
+- [x] weighted Cross Entropy
+- [x] training pipeline
+- [x] validation pipeline
+- [x] checkpoint saving/loading
+- [x] multiclass segmentation experiments
+- [x] binary tumor segmentation experiments
+
 
 ### Phase 4 — Evaluation
 
-- [ ] Dice score
-- [ ] IoU / Jaccard index
-- [ ] Precision
-- [ ] Recall / Sensitivity
-- [ ] Lesion-wise evaluation
-- [ ] Error analysis
+- [x] Dice score
+- [x] IoU / Jaccard
+- [x] Precision
+- [x] Recall / Sensitivity
+- [x] per-case evaluation
+- [x] probability and threshold analysis
+- [x] visual error analysis
+- [x] lesion-wise evaluation
+- [x] connected-component analysis
+- [x] lesion-size analysis
+- [x] post-processing evaluation
+- [x] CSV reporting
+
 
 ### Phase 5 — Clinical Imaging Workflow
 
 - [ ] DICOM loading
 - [ ] DICOM series reconstruction
-- [ ] Hounsfield Unit handling
+- [ ] Hounsfield Unit handling from DICOM metadata
+- [ ] clinical-style preprocessing
+- [ ] inference on DICOM volumes
 - [ ] DICOM SEG / RTSTRUCT exploration
-- [ ] Inference on clinical-style imaging data
 
-## Educational Goals
 
-The project is also intended as a practical learning path covering:
+## Limitations
 
-Python programming for medical imaging
-NumPy array manipulation
-3D medical image formats
-NIfTI metadata and affine matrices
-Hounsfield Units
-CT windowing
-intensity normalization
-medical image visualization
-quantitative image analysis
-preprocessing for deep learning
-3D semantic segmentation
+The current experimental results are based on a very small subset of the available dataset.
 
-## Future Direction
+In particular:
 
-The next preprocessing step will focus on voxel-spacing resampling.
+```text
+10 patients total
+8 training patients
+2 validation patients
+```
 
-The current CT volume has anisotropic spacing:
+The reported metrics therefore have high statistical uncertainty and must not be interpreted as evidence of clinical model performance.
 
-0.703125 × 0.703125 × 5.0 mm
+The current patch-based workflow is also tumor-centered using ground-truth information during training and experimental validation preprocessing.
 
-Future processing will resample the CT volume and segmentation mask toward a more consistent spatial resolution.
+Future work should evaluate more realistic inference strategies on complete volumes and substantially larger patient cohorts.
 
-Particular attention will be required when resampling segmentation masks, because discrete label values must be preserved.
-
-After preprocessing is completed, the project will move toward a 3D deep learning segmentation pipeline using PyTorch and MONAI.
 
 ## Disclaimer
 
 This project is developed for educational and research purposes only.
 
-It is not a medical device and must not be used for clinical diagnosis, treatment planning or medical decision-making.
+It is not a medical device and must not be used for clinical diagnosis, treatment planning, or medical decision-making.

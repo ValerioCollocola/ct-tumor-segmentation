@@ -65,3 +65,42 @@ def find_label_center(
     ).astype(int)
 
     return tuple(center)
+
+def generate_shifted_centers(
+    center,
+    num_patches=5,
+    max_shift=(12, 12, 8),
+    seed=42
+):
+    rng = np.random.default_rng(seed)
+
+    center = np.asarray(
+        center,
+        dtype=int
+    )
+
+    max_shift = np.asarray(
+        max_shift,
+        dtype=int
+    )
+
+    centers = [
+        tuple(center)
+    ]
+
+    for _ in range(num_patches - 1):
+
+        shift = rng.integers(
+            low=-max_shift,
+            high=max_shift + 1
+        )
+
+        shifted_center = (
+            center + shift
+        )
+
+        centers.append(
+            tuple(shifted_center)
+        )
+
+    return centers
