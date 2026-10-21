@@ -1,4 +1,4 @@
-from src.data.dicom.io import (
+from src.dicom.io import (
     discover_dicom_files
 )
 

@@ -1,10 +1,10 @@
 from pydicom import examples
 
-from src.data.dicom.io import (
+from src.dicom.io import (
     load_dicom_file
 )
 
-from src.data.dicom.intensity import (
+from  src.dicom.intensity import (
     dicom_pixels_to_hu
 )
 

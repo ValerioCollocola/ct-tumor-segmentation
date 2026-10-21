@@ -1,6 +1,6 @@
 from pydicom import examples
 
-from src.data.dicom.io import (
+from src.dicom.io import (
     load_dicom_file,
     extract_basic_metadata
 )

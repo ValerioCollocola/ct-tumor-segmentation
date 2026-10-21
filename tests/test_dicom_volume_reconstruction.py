@@ -9,7 +9,7 @@ from pydicom.uid import (
     ExplicitVRLittleEndian
 )
 
-from src.data.dicom.reconstruction import (
+from src.dicom.reconstruction import (
     reconstruct_ct_volume
 )
 

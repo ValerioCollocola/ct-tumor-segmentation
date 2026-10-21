@@ -1,6 +1,6 @@
 from pydicom.dataset import Dataset
 
-from src.data.dicom.series import (
+from src.dicom.series import (
     get_slice_position,
     sort_dicom_slices,
     compute_slice_spacing
