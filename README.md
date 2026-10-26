@@ -216,6 +216,7 @@ ct-tumor-segmentation/
 ├── tests/
 │
 ├── .gitignore
+├── LICENSE
 ├── README.md
 └── requirements.txt
 ```
@@ -2373,7 +2374,9 @@ This combination is intentional.
 
 # License
 
-A repository license will be added at public release.
+This project is released under the Apache License 2.0.
+
+See the [`LICENSE`](LICENSE) file for details.
 
 ---
 
@@ -2386,3 +2389,4 @@ The models, predictions, thresholds and post-processing methods have not been cl
 They must not be used for diagnosis, treatment planning or patient-care decisions.
 
 All medical-imaging results should be interpreted as experimental outputs only.
+
