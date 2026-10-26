@@ -1,99 +1,176 @@
-# 3D CT Tumor Segmentation
+# CT Tumor Segmentation
 
-End-to-end medical imaging project for 3D CT tumor segmentation using Python, PyTorch, SciPy, pydicom, and NIfTI/DICOM imaging data.
+End-to-end 3D CT tumor segmentation project using Python, PyTorch, MONAI, pydicom and medical imaging data.
 
-The project progressively explores the complete workflow from medical image loading and preprocessing to deep learning segmentation, quantitative evaluation, DICOM reconstruction, full-volume inference, and anatomically constrained post-processing.
+This project was developed as a progressive medical-imaging AI workflow, starting from research-ready NIfTI volumes and evolving toward real clinical DICOM series, DICOM SEG objects, full-volume inference, anatomical constraints and MONAI-based pipelines.
 
-> **Disclaimer**
->
-> This project is developed for educational and research purposes only.
-> It is not a medical device and must not be used for diagnosis, treatment planning, or clinical decision-making.
+The main goal is not only to train a segmentation model, but to understand the complete path from medical image acquisition and physical geometry to preprocessing, deep learning, evaluation and deployment-style inference.
 
 ---
 
-## Overview
+# Project Goals
 
-The project was designed to study the complete lifecycle of a medical imaging AI pipeline rather than focusing only on neural network training.
+The project explores the complete workflow required for 3D CT tumor segmentation:
 
-The workflow currently includes:
+* medical image loading
+* CT intensity interpretation
+* Hounsfield Unit handling
+* windowing
+* normalization
+* physical-space resampling
+* 3D patch extraction
+* data augmentation
+* patient-level train/validation splitting
+* 3D U-Net segmentation
+* multiclass and binary tumor segmentation
+* voxel-wise evaluation
+* lesion-wise evaluation
+* connected-component analysis
+* probability-map inspection
+* full-volume sliding-window inference
+* DICOM series reconstruction
+* DICOM SEG reconstruction
+* anatomical liver constraints
+* physical lesion-volume analysis
+* MONAI preprocessing
+* MONAI Dataset / CacheDataset
+* MONAI tumor-aware training transforms
+* MONAI sliding-window inference
+* end-to-end MONAI inference
+
+The project is intended for educational and research purposes.
+
+It is not a medical device and is not intended for clinical diagnosis or treatment decisions.
+
+---
+
+# Core Idea
+
+Medical AI is not only about the neural network.
+
+A clinically meaningful pipeline must also correctly handle:
 
 ```text
 Medical imaging data
         ↓
-Image loading
+Image format and metadata
         ↓
-Geometry and voxel spacing
+Physical geometry
         ↓
-CT intensity interpretation
+Hounsfield Units
         ↓
-Windowing
+Preprocessing
         ↓
-Normalization
+3D segmentation model
         ↓
-Resampling
+Evaluation
         ↓
-3D patch extraction
+Full-volume inference
         ↓
-PyTorch Dataset / DataLoader
-        ↓
-3D U-Net
-        ↓
-Training and validation
-        ↓
-Voxel-wise evaluation
-        ↓
-Lesion-wise evaluation
-        ↓
-Post-processing
-        ↓
-DICOM series reconstruction
-        ↓
-DICOM SEG integration
-        ↓
-Sliding-window full-volume inference
-        ↓
-Anatomically constrained prediction
+Clinical interoperability
 ```
 
-The first phases use a liver CT segmentation dataset distributed in NIfTI format.
+Two principles became especially important during the project:
 
-The later phases introduce real DICOM CT studies in order to bridge the gap between a research-oriented workflow and a clinical imaging workflow.
+> **AI sees voxels; clinical imaging happens in millimeters.**
+
+and:
+
+> **Training is not deployment.**
+
+A model trained on tumor-centered patches cannot automatically be assumed to work on an entire clinical CT volume where the tumor location is unknown.
 
 ---
 
-# Project Structure
+# Technology Stack
+
+The project currently uses:
+
+* Python
+* NumPy
+* SciPy
+* NiBabel
+* Matplotlib
+* PyTorch
+* MONAI
+* pydicom
+* Jupyter
+* Git / GitHub
+
+---
+
+# Repository Structure
 
 ```text
 ct-tumor-segmentation/
 │
-├── configs/
-│
 ├── data/
 │   ├── multicase/
-│   ├── sample/
 │   └── dicom/
-│       ├── lidc_idri/
-│       ├── liver_portal_venous/
-│       ├── liver_arterial/
-│       └── liver_seg/
 │
 ├── docs/
 │   └── images/
-│
-├── notebooks/
 │
 ├── outputs/
 │   ├── checkpoints/
 │   └── evaluation/
 │
 ├── src/
+│   │
+│   ├── analysis/
+│   │   └── tumor_metrics.py
+│   │
 │   ├── data/
+│   │   ├── __init__.py
+│   │   ├── cases.py
+│   │   ├── dataset.py
+│   │   ├── io.py
+│   │   ├── monai_dataset.py
+│   │   └── split.py
+│   │
 │   ├── dicom/
+│   │   ├── __init__.py
+│   │   ├── intensity.py
+│   │   ├── io.py
+│   │   ├── reconstruction.py
+│   │   ├── seg.py
+│   │   └── series.py
+│   │
 │   ├── evaluation/
+│   │   ├── __init__.py
+│   │   ├── lesion_metrics.py
+│   │   └── metrics.py
+│   │
 │   ├── inference/
+│   │   ├── __init__.py
+│   │   ├── sliding_window.py
+│   │   ├── monai_sliding_window.py
+│   │   └── monai_pipeline.py
+│   │
 │   ├── models/
+│   │   ├── __init__.py
+│   │   ├── losses.py
+│   │   ├── simple_3d_cnn.py
+│   │   └── unet3d.py
+│   │
 │   ├── preprocessing/
+│   │   ├── augmentation.py
+│   │   ├── labels.py
+│   │   ├── monai_training_transforms.py
+│   │   ├── monai_transforms.py
+│   │   ├── normalization.py
+│   │   ├── patches.py
+│   │   ├── pipeline.py
+│   │   ├── resampling.py
+│   │   └── windowing.py
+│   │
 │   ├── training/
+│   │   ├── __init__.py
+│   │   ├── checkpoint.py
+│   │   ├── train.py
+│   │   ├── train_binary.py
+│   │   └── validate.py
+│   │
 │   └── visualization/
 │
 ├── tests/
@@ -103,17 +180,19 @@ ct-tumor-segmentation/
 └── requirements.txt
 ```
 
-Medical imaging datasets, model checkpoints, and generated outputs are intentionally excluded from version control when appropriate.
+The `data/` and `outputs/` directories are intentionally excluded from Git.
+
+Medical-image files and model checkpoints are also protected by `.gitignore`.
 
 ---
 
-# Dataset
+# Data
 
-## NIfTI Liver CT Dataset
+## Medical Segmentation Decathlon — Task03 Liver
 
-The initial segmentation experiments use the liver task from the Medical Segmentation Decathlon.
+The initial training and evaluation workflow uses the liver task from the Medical Segmentation Decathlon.
 
-The label convention is:
+Label convention:
 
 ```text
 0 = background
@@ -121,585 +200,104 @@ The label convention is:
 2 = tumor
 ```
 
-A typical CT volume contains:
+The initial experimental subset contains:
 
 ```text
-Shape:
-512 × 512 × N slices
-
-Voxel spacing:
-approximately sub-millimeter in-plane
-with larger spacing along the slice axis
+liver_0
+liver_1
+...
+liver_9
 ```
 
-The project initially uses a small subset of cases to keep experimentation computationally manageable.
-
-The current exploratory patient-level split contains:
+The patient-level split uses a fixed random seed.
 
 ```text
-8 training patients
-2 validation patients
+Training:
+8 patients
+
+Validation:
+2 patients
 ```
 
-This is intentionally small and must not be interpreted as sufficient for estimating clinical performance.
+Training cases:
+
+```text
+liver_0
+liver_1
+liver_2
+liver_4
+liver_5
+liver_6
+liver_8
+liver_9
+```
+
+Validation cases:
+
+```text
+liver_3
+liver_7
+```
+
+The split is performed at patient level to avoid data leakage between training and validation patches.
 
 ---
 
 # Phase 1 — Medical Image Exploration
 
-The first phase focuses on understanding medical images before introducing deep learning.
+The first phase focused on understanding the CT data before introducing a neural network.
 
-Implemented steps include:
+For `liver_0`:
 
-- loading NIfTI CT volumes;
-- loading segmentation masks;
-- inspecting image shapes;
-- inspecting voxel spacing;
-- identifying label values;
-- visualizing axial CT slices;
-- overlaying tumor masks;
-- automatically identifying tumor-containing slices;
-- estimating tumor volume from voxel count and physical voxel dimensions.
+```text
+Shape:
+(512, 512, 75)
 
-A key concept introduced in this phase is that image arrays alone are not sufficient to interpret medical imaging data.
+Intensity range:
+approximately -1024 to 1410 HU
 
-Voxel spacing is required to translate image coordinates into physical dimensions.
+Voxel spacing:
+0.703125 × 0.703125 × 5.0 mm
+
+Label values:
+[0, 1, 2]
+```
+
+This phase included:
+
+* image loading
+* segmentation-mask loading
+* shape inspection
+* voxel-spacing inspection
+* label inspection
+* tumor localization
+* tumor-volume estimation
+* axial visualization
+* overlay visualization
+
+A central lesson was that voxel counts alone do not represent physical volume.
+
+Physical volume must include voxel spacing:
+
+```text
+physical volume
+=
+number of voxels
+× spacing_x
+× spacing_y
+× spacing_z
+```
+
+This becomes especially important after resampling, because the number of voxels changes while the underlying anatomy does not.
 
 ---
 
 # Phase 2 — Preprocessing
 
-The preprocessing pipeline currently includes:
-
-- CT windowing;
-- intensity normalization;
-- voxel-spacing resampling;
-- patient-level train/validation splitting;
-- tumor-centered 3D patch extraction;
-- shifted tumor-aware patch sampling;
-- data augmentation;
-- binary tumor-label conversion.
-
----
-
-## CT Windowing
-
-For liver-focused preprocessing, a liver / soft-tissue window is used:
+The preprocessing pipeline includes:
 
 ```text
-Window center = 50 HU
-Window width  = 150 HU
-```
-
-which corresponds approximately to:
-
-```text
--25 HU to 125 HU
-```
-
-Values outside this interval are clipped.
-
-Windowing reduces the influence of irrelevant intensity ranges and emphasizes soft-tissue contrast.
-
----
-
-## Intensity Normalization
-
-After windowing, intensities are normalized into:
-
-```text
-[0, 1]
-```
-
-This produces a numerically consistent representation for neural-network input.
-
----
-
-## Voxel-Spacing Resampling
-
-CT scans are acquired using different voxel sizes.
-
-To reduce geometric variability between patients, volumes are resampled toward:
-
-```text
-1.0 × 1.0 × 2.5 mm
-```
-
-Linear interpolation is used for CT intensities.
-
-Nearest-neighbor interpolation is used for segmentation masks.
-
-This distinction is critical because interpolation of discrete labels must not create artificial intermediate class values.
-
----
-
-## Why Voxel Geometry Matters
-
-Medical images represent physical anatomy.
-
-A voxel array may have spacing such as:
-
-```text
-0.742 × 0.742 × 3.0 mm
-```
-
-This means spatial resolution is much finer in the axial plane than along the slice direction.
-
-As a consequence, coronal and sagittal reconstructions can appear visually coarser than axial images.
-
-This is not a plotting error.
-
-It reflects the original acquisition geometry.
-
-A fundamental lesson of this project is:
-
-> **AI sees voxels; clinical imaging happens in millimeters.**
-
-Resampling therefore is not merely an image-resizing operation.
-
-It standardizes physical geometry across scans before training or inference.
-
-Resampling does not create anatomical information that was absent from the original acquisition.
-
----
-
-# 3D Tumor Patch Extraction
-
-The model is trained using 3D patches rather than full CT volumes.
-
-The current patch size is:
-
-```text
-96 × 96 × 64
-```
-
-Tumor-centered sampling increases the probability that training patches contain the minority tumor class.
-
-To increase variability, multiple spatially shifted tumor-centered patches are generated per patient.
-
-For the current exploratory training subset:
-
-```text
-8 training patients
-5 tumor-aware patches per patient
-40 training patches
-```
-
-The validation set remains patient-independent.
-
----
-
-# Phase 3 — Deep Learning
-
-The segmentation pipeline is implemented using PyTorch.
-
-The main architecture is a compact 3D U-Net.
-
-Current model configuration:
-
-```text
-Input channels:   1
-Base channels:    8
-Output classes:   configurable
-```
-
-Both multiclass and binary segmentation experiments were explored.
-
----
-
-## Multiclass Segmentation
-
-The original setup predicts:
-
-```text
-0 = background
-1 = liver
-2 = tumor
-```
-
-Experiments included:
-
-- Cross Entropy;
-- class-weighted Cross Entropy;
-- Dice loss;
-- combined losses;
-- tumor-specific Dice loss.
-
-The experiments showed that decreasing training and validation loss did not automatically produce useful hard tumor segmentation.
-
-The model could produce non-zero tumor probability while still producing essentially zero hard tumor Dice.
-
-This motivated a deeper investigation of probability maps and threshold behavior.
-
----
-
-## Binary Tumor Segmentation
-
-A second formulation converts the label map into:
-
-```text
-0 = non-tumor
-1 = tumor
-```
-
-This simplifies the segmentation target and allows a dedicated tumor-vs-non-tumor model.
-
-The current binary model uses:
-
-```text
-UNet3D
-in_channels = 1
-num_classes = 2
-base_channels = 8
-```
-
-A weighted Cross Entropy + tumor Dice loss is used during training.
-
----
-
-# Single-Case Overfitting Test
-
-Before multicase training, a single-case overfitting experiment was performed.
-
-The purpose was not to estimate generalization performance.
-
-The purpose was to verify that the complete training pipeline could:
-
-- execute correctly;
-- propagate gradients;
-- update model weights;
-- decrease loss on a deliberately tiny training problem.
-
-A fixed random seed was later introduced to improve reproducibility.
-
-![Single-case overfitting loss](docs/images/single_case_overfit_loss.png)
-
-The experiment demonstrated decreasing loss and provided an important debugging checkpoint before larger training experiments.
-
----
-
-# Training and Validation
-
-The training loop includes:
-
-- forward propagation;
-- loss calculation;
-- backpropagation;
-- optimizer updates;
-- validation;
-- tumor Dice monitoring;
-- checkpoint saving.
-
-Separate checkpoints are saved for:
-
-- best validation loss;
-- best validation tumor Dice.
-
-This distinction became important because the epoch with the best segmentation metric did not necessarily correspond to the epoch with the lowest validation loss.
-
-![Training and validation loss](docs/images/training_validation_loss.png)
-
----
-
-# Phase 4 — Evaluation
-
-The binary tumor segmentation model was evaluated on a patient-level validation split using both voxel-wise and lesion-wise metrics.
-
-The current validation subset contains only two patients and is therefore intended as an exploratory technical evaluation rather than a reliable estimate of clinical performance.
-
----
-
-## Voxel-Wise Metrics
-
-The following metrics are currently implemented:
-
-- Dice score;
-- Intersection over Union (IoU / Jaccard);
-- Precision;
-- Recall / Sensitivity.
-
-Using the checkpoint selected by validation Tumor Dice:
-
-| Case | Dice | IoU | Precision | Recall | GT Tumor Voxels | Predicted Tumor Voxels |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| liver_3 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 529 | 0 |
-| liver_7 | 0.4296 | 0.2735 | 0.9875 | 0.2745 | 6350 | 1765 |
-
-The results show substantial case-to-case variability.
-
-For `liver_3`, the tumor is completely missed.
-
-For `liver_7`, the model localizes part of the tumor with very high precision but relatively low recall.
-
-This corresponds to conservative segmentation that captures only part of the ground-truth tumor volume.
-
-![Binary prediction liver 3](docs/images/liver_3_binary_prediction.png)
-
-![Binary prediction liver 7](docs/images/liver_7_binary_prediction.png)
-
----
-
-## Lesion-Wise Evaluation
-
-Connected-component analysis with 3D 26-connectivity was introduced to evaluate tumor detection at the lesion level.
-
-| Case | GT Lesions | Predicted Lesions | Detected | Missed | False Positive Lesions | Lesion Sensitivity |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| liver_3 | 1 | 0 | 0 | 1 | 0 | 0.0000 |
-| liver_7 | 3 | 6 | 2 | 1 | 3 | 0.6667 |
-
-Lesion-wise metrics provide complementary information to voxel-wise segmentation metrics.
-
-A model may only partially segment a lesion while still detecting it as an object.
-
----
-
-## Connected-Component Post-Processing
-
-Predicted component sizes were analyzed to identify isolated false-positive fragments.
-
-For `liver_7`, predicted components included:
-
-```text
-19 voxels
-40 voxels
-1381 voxels
-323 voxels
-1 voxel
-1 voxel
-```
-
-A minimum connected-component size of 20 voxels was explored.
-
-The comparison was:
-
-| Metric | Raw | Filtered |
-| --- | ---: | ---: |
-| Dice | 0.4296 | 0.4307 |
-| IoU | 0.2735 | 0.2744 |
-| Precision | 0.9875 | 0.9994 |
-| Recall | 0.2745 | 0.2745 |
-| Predicted lesions | 6 | 3 |
-| False-positive lesions | 3 | 0 |
-| Lesion sensitivity | 0.6667 | 0.6667 |
-
-The filtering step removed small false-positive components while preserving lesion sensitivity and recall in this very small exploratory validation set.
-
-The threshold was selected during exploratory analysis and must not be interpreted as a clinically validated parameter.
-
----
-
-## Error Analysis
-
-Visual inspection showed two different failure modes:
-
-```text
-liver_3
-→ complete tumor miss
-
-liver_7
-→ correct localization
-→ substantial under-segmentation
-```
-
-These experiments demonstrate why validation loss alone is not sufficient to assess medical image segmentation quality.
-
-Voxel-wise metrics, lesion-wise metrics, probability maps, connected-component analysis, and visual inspection provide complementary information.
-
----
-
-# Phase 5 — Clinical Imaging Workflow
-
-The fifth phase extends the project from research-oriented NIfTI data toward real-world DICOM imaging workflows.
-
-This phase introduces:
-
-- DICOM file loading;
-- DICOM metadata inspection;
-- series grouping;
-- spatial slice ordering;
-- Hounsfield Unit reconstruction;
-- 3D volume reconstruction;
-- geometry validation;
-- multiplanar visualization;
-- DICOM SEG exploration;
-- full-volume sliding-window inference;
-- anatomical ROI constraints;
-- connected-component filtering.
-
----
-
-# NIfTI vs DICOM
-
-One of the most important concepts introduced in this project is that NIfTI and DICOM usually operate at different layers of the imaging workflow.
-
-NIfTI is extremely convenient for research and deep learning because the volume has already been reconstructed into a compact 3D representation.
-
-DICOM represents the clinical acquisition layer.
-
-A DICOM CT study may contain:
-
-- many individual image files;
-- multiple series;
-- acquisition metadata;
-- patient-space geometry;
-- intensity-rescaling information;
-- derived objects such as segmentations.
-
-Conceptually:
-
-```text
-DICOM
-↓
-Clinical acquisition layer
-↓
-Series selection
-↓
-Spatial reconstruction
-↓
-HU conversion
-↓
-3D volume
-↓
-Preprocessing
-↓
-NIfTI / NumPy-like research representation
-↓
-Deep learning
-```
-
-A central conclusion of the project is:
-
-> **The neural network is only one component of a medical imaging AI system.**
-
-Clinical deployment requires understanding both the imaging pipeline before the model and the output-processing pipeline after the model.
-
----
-
-# DICOM CT Reconstruction
-
-Real DICOM CT series were explored using `pydicom`.
-
-The reconstruction workflow includes:
-
-```text
-DICOM directory
-    ↓
-file discovery
-    ↓
-SeriesInstanceUID grouping
-    ↓
-series selection
-    ↓
-spatial slice sorting
-    ↓
-HU conversion
-    ↓
-3D volume reconstruction
-```
-
-Slice ordering is derived from physical DICOM geometry using:
-
-```text
-ImageOrientationPatient
-ImagePositionPatient
-```
-
-rather than relying only on filenames or `InstanceNumber`.
-
-This allows the reconstruction to respect the actual patient-space geometry.
-
----
-
-# Hounsfield Unit Reconstruction
-
-Raw stored DICOM pixel values are converted into CT Hounsfield Units using DICOM rescale metadata.
-
-Typical metadata include:
-
-```text
-RescaleSlope
-RescaleIntercept
-```
-
-For example:
-
-```text
-RescaleSlope     = 1
-RescaleIntercept = -1024
-```
-
-The reconstructed HU volume can then use the same CT windowing concepts previously applied to NIfTI data.
-
----
-
-# Real Thoracic DICOM Series
-
-A real LIDC-IDRI CT series was used to validate the generic DICOM reconstruction pipeline.
-
-The reconstructed volume contained:
-
-```text
-133 slices
-
-Volume shape:
-512 × 512 × 133
-
-Voxel spacing:
-0.703125 × 0.703125 × 2.5 mm
-```
-
-Geometry validation showed:
-
-```text
-Minimum slice spacing:   2.5 mm
-Maximum slice spacing:   2.5 mm
-Mean slice spacing:      2.5 mm
-Standard deviation:      0
-Irregular intervals:     0
-```
-
-Axial, coronal, and sagittal views were reconstructed from the same volume.
-
-This validated the complete DICOM-to-3D-volume workflow independently of the liver-specific segmentation task.
-
----
-
-# Real Liver DICOM Series
-
-To align the clinical workflow with the main project objective, a liver CT study from TCGA-LIHC was selected.
-
-A portal-venous series was reconstructed:
-
-```text
-Series description:
-P.Venous 3.0 B40f
-
-Number of slices:
-83
-
-Volume shape:
-512 × 512 × 83
-
-Voxel spacing:
-0.7421875 × 0.7421875 × 3.0 mm
-
-HU range:
--1024 to 1992
-```
-
-The reconstructed volume was then processed using the same principles already developed for the NIfTI pipeline.
-
----
-
-# DICOM-to-AI Preprocessing
-
-The portal-venous DICOM series was transformed through:
-
-```text
-DICOM files
-    ↓
-3D HU volume
+CT volume
     ↓
 windowing
     ↓
@@ -707,224 +305,819 @@ normalization
     ↓
 resampling
     ↓
-AI-ready volume
+patch extraction
+    ↓
+augmentation
 ```
 
-The original volume:
+---
+
+## CT Windowing
+
+A soft-tissue liver window is used:
 
 ```text
+Window center:
+50 HU
+
+Window width:
+150 HU
+```
+
+This corresponds approximately to:
+
+```text
+-25 HU to 125 HU
+```
+
+Values outside the interval are clipped.
+
+---
+
+## Intensity Normalization
+
+After windowing, intensities are normalized to:
+
+```text
+[0, 1]
+```
+
+The custom implementation uses:
+
+```python
+(image - min_value) / (max_value - min_value)
+```
+
+---
+
+## Resampling
+
+The target voxel spacing is:
+
+```text
+1.0 × 1.0 × 2.5 mm
+```
+
+The custom resampling implementation uses:
+
+```python
+zoom_factors = current_spacing / target_spacing
+```
+
+with `scipy.ndimage.zoom`.
+
+Interpolation:
+
+```text
+CT image:
+linear interpolation
+
+Segmentation label:
+nearest-neighbor interpolation
+```
+
+Nearest-neighbor interpolation is essential for segmentation labels because labels are discrete classes and must not be converted into artificial intermediate values.
+
+For `liver_0`:
+
+```text
+Original:
+512 × 512 × 75
+
+Original spacing:
+0.703125 × 0.703125 × 5.0 mm
+
+Resampled:
+approximately 360 × 360 × 150
+```
+
+---
+
+## Physical Geometry
+
+One of the most important lessons of the project is:
+
+> **AI sees voxels; clinical imaging happens in millimeters.**
+
+A CT volume can be highly anisotropic.
+
+For example:
+
+```text
+0.742 × 0.742 × 3.0 mm
+```
+
+means that the axial resolution is much higher than the through-plane resolution.
+
+This explains why coronal and sagittal reconstructions may appear visually coarser.
+
+Resampling standardizes the physical grid.
+
+It does not create new anatomy or recover information that was not acquired.
+
+---
+
+# Tumor-Centered Patch Extraction
+
+The training patch size is:
+
+```text
+96 × 96 × 64
+```
+
+The custom patch strategy is tumor-aware.
+
+For each training patient:
+
+```text
+tumor centroid
+        ↓
+small random spatial shift
+        ↓
+3D patch extraction
+```
+
+Maximum shifts:
+
+```text
+X: ±12 voxels
+Y: ±12 voxels
+Z: ±8 voxels
+```
+
+Five shifted patches are generated per training patient.
+
+With eight training patients:
+
+```text
+8 patients × 5 patches
+=
+40 training patches
+```
+
+Validation uses one deterministic tumor-centered patch per patient.
+
+---
+
+# Data Augmentation
+
+Training-time augmentation includes 3D flips.
+
+Image and label transformations are always applied together so that spatial correspondence is preserved.
+
+---
+
+# Phase 3 — 3D Deep Learning
+
+A compact 3D U-Net was implemented in PyTorch.
+
+Main configuration:
+
+```text
+Input channels:
+1
+
+Base channels:
+8
+
+Output classes:
+configurable
+```
+
+The architecture follows the standard encoder-decoder design:
+
+```text
+CT patch
+   ↓
+Encoder
+   ↓
+Bottleneck
+   ↓
+Decoder
+   ↓
+Skip connections
+   ↓
+Voxel-wise logits
+```
+
+---
+
+# Multiclass Segmentation
+
+The initial formulation used three classes:
+
+```text
+0 = background
+1 = liver
+2 = tumor
+```
+
+Training loss decreased, but hard tumor Dice remained very low.
+
+Probability-map analysis showed that the model was learning a weak tumor-related signal even when the tumor class did not win the final `argmax`.
+
+Example behavior:
+
+```text
+liver_3
+
+mean tumor probability on GT tumor:
+~0.112
+
+mean tumor probability outside tumor:
+~0.059
+```
+
+and:
+
+```text
+liver_7
+
+mean tumor probability on GT tumor:
+~0.161
+
+mean tumor probability outside tumor:
+~0.086
+```
+
+This suggested that the model was learning some tumor discrimination but not enough for reliable multiclass hard segmentation.
+
+---
+
+# Threshold Analysis
+
+Tumor probability thresholds were explored diagnostically.
+
+For example, on `liver_7`:
+
+```text
+threshold 0.10
+high recall, very low precision
+
+threshold 0.15
+Dice improves
+
+threshold 0.20+
+prediction collapses rapidly
+```
+
+These thresholds were evaluated on the same validation patients.
+
+They are therefore treated as exploratory and not as unbiased threshold selection.
+
+---
+
+# Binary Tumor Segmentation
+
+The task was simplified to:
+
+```text
+0 = non-tumor
+1 = tumor
+```
+
+The label conversion is:
+
+```python
+(label == 2).astype(np.int64)
+```
+
+Class weighting was used to address class imbalance.
+
+Example binary weights:
+
+```text
+non-tumor:
+0.10
+
+tumor:
+1.90
+```
+
+The binary model produced the first clearly non-zero hard tumor Dice on validation.
+
+---
+
+# Binary Training Result
+
+At epoch 10:
+
+```text
+Train loss:
+~1.1237
+
+Validation loss:
+~2.2197
+
+Train tumor Dice:
+~0.1322
+
+Validation tumor Dice:
+~0.2148
+```
+
+Separate checkpoints were maintained for:
+
+```text
+best validation loss
+best tumor Dice
+```
+
+The main tumor-Dice checkpoint is:
+
+```text
+outputs/checkpoints/
+best_real_binary_unet_best_tumor_dice.pt
+```
+
+---
+
+# Phase 4 — Voxel-Wise Evaluation
+
+Best tumor-Dice checkpoint:
+
+## liver_3
+
+```text
+Dice:
+0.0000
+
+Precision:
+0.0000
+
+Recall:
+0.0000
+
+Ground-truth tumor voxels:
+529
+
+Predicted tumor voxels:
+0
+```
+
+This is a complete miss.
+
+---
+
+## liver_7
+
+```text
+Dice:
+0.4296
+
+IoU:
+0.2735
+
+Precision:
+0.9875
+
+Recall:
+0.2745
+
+Ground-truth tumor voxels:
+6350
+
+Predicted tumor voxels:
+1765
+```
+
+This represents a different failure mode:
+
+```text
+very high precision
++
+low recall
+=
+conservative under-segmentation
+```
+
+The two validation cases demonstrate why aggregate metrics alone can be misleading.
+
+---
+
+# Lesion-Wise Evaluation
+
+A lesion-level evaluation was implemented using 3D connected components with 26-connectivity.
+
+## liver_3
+
+```text
+GT lesions:
+1
+
+Predicted lesions:
+0
+
+Detected:
+0
+
+Missed:
+1
+
+False positives:
+0
+
+Lesion sensitivity:
+0.0
+```
+
+## liver_7
+
+```text
+GT lesions:
+3
+
+Predicted lesions:
+6
+
+Detected:
+2
+
+Missed:
+1
+
+False positives:
+3
+
+Lesion sensitivity:
+0.6667
+```
+
+---
+
+# Connected-Component Post-Processing
+
+Small predicted components were filtered.
+
+For `liver_7`, after removing components smaller than 20 voxels:
+
+```text
+Predicted lesions:
+6 → 3
+
+False-positive lesions:
+3 → 0
+```
+
+Voxel-level metrics changed only slightly:
+
+```text
+Dice:
+0.4296 → 0.4307
+
+IoU:
+0.2735 → 0.2744
+
+Precision:
+0.9875 → 0.9994
+
+Recall:
+approximately unchanged
+```
+
+This illustrates an important point:
+
+> Post-processing can remove fragmentation and false positives, but it cannot recover lesions the model never predicted.
+
+---
+
+# Phase 5 — Clinical Imaging Workflow
+
+The next phase moved from research-ready NIfTI data to real DICOM imaging.
+
+The goal was to understand the clinical acquisition layer:
+
+```text
+DICOM files
+    ↓
+series discovery
+    ↓
+series grouping
+    ↓
+spatial sorting
+    ↓
+HU reconstruction
+    ↓
+3D CT volume
+    ↓
+AI preprocessing
+    ↓
+full-volume inference
+```
+
+---
+
+# DICOM Discovery
+
+DICOM files are discovered and grouped using:
+
+```text
+SeriesInstanceUID
+```
+
+The workflow does not rely on filenames or file extensions.
+
+This is important because clinical imaging directories may contain multiple series and different DICOM object types.
+
+---
+
+# DICOM Slice Sorting
+
+Slices are not sorted using filenames.
+
+Spatial sorting uses:
+
+```text
+ImageOrientationPatient
+ImagePositionPatient
+```
+
+The slice normal is derived from the row and column orientation vectors.
+
+Conceptually:
+
+```text
+slice_normal
+=
+row_direction × column_direction
+```
+
+and slice position is obtained from:
+
+```text
+dot(ImagePositionPatient, slice_normal)
+```
+
+This produces a geometrically robust ordering.
+
+---
+
+# DICOM to Hounsfield Units
+
+Stored CT pixel values are converted using:
+
+```text
+HU
+=
+stored pixel value
+× RescaleSlope
++ RescaleIntercept
+```
+
+A pydicom example CT produced:
+
+```text
+Stored values:
+128 to 2191
+
+Slope:
+1
+
+Intercept:
+-1024
+
+HU:
+-896 to 1167
+```
+
+---
+
+# Real DICOM Series
+
+## LIDC-IDRI CT
+
+A thoracic CT series was reconstructed:
+
+```text
+Slices:
+133
+
+Shape:
+512 × 512 × 133
+
+Spacing:
+0.703125 × 0.703125 × 2.5 mm
+
+Geometry:
+regular
+
+Irregular intervals:
+0
+```
+
+This dataset was used primarily to validate the technical DICOM reconstruction pipeline.
+
+---
+
+# TCGA-LIHC Liver CT
+
+A liver case from NCI Imaging Data Commons was then used.
+
+## Portal Venous Series
+
+```text
+Description:
+P.Venous 3.0 B40f
+
+Slices:
+83
+
 Shape:
 512 × 512 × 83
 
 Spacing:
 0.7421875 × 0.7421875 × 3.0 mm
+
+HU:
+approximately -1024 to 1992
 ```
 
-was resampled to:
+After preprocessing and resampling:
 
 ```text
-Target spacing:
-1.0 × 1.0 × 2.5 mm
-
-Resampled shape:
 380 × 380 × 100
 ```
 
-This demonstrates that the NIfTI and DICOM workflows converge once the DICOM study has been reconstructed into a geometrically correct HU volume.
+with target spacing:
+
+```text
+1.0 × 1.0 × 2.5 mm
+```
+
+This step demonstrated that once the DICOM volume is correctly reconstructed in HU, the same preprocessing concepts used for NIfTI can be reused.
 
 ---
 
-# Research Pipeline vs Clinical Imaging Pipeline
+# Training Is Not Deployment
 
-The relationship can be summarized as:
+The training pipeline used tumor-centered patches.
+
+During training:
 
 ```text
-NIfTI workflow
-     │
-     │
-     ├── windowing
-     ├── normalization
-     ├── resampling
-     │
-     ↓
-AI-ready volume
-
-
-DICOM workflow
-     │
-     ├── series selection
-     ├── metadata interpretation
-     ├── slice geometry
-     ├── HU reconstruction
-     │
-     ├── windowing
-     ├── normalization
-     ├── resampling
-     │
-     ↓
-AI-ready volume
+tumor location is known
 ```
 
-The DICOM workflow therefore introduces the clinical imaging layer that is already hidden or preprocessed when using research-ready NIfTI datasets.
+because the ground-truth segmentation is available.
+
+In real inference:
+
+```text
+tumor location is unknown
+```
+
+The model must therefore search the entire volume.
+
+This creates a major distribution shift:
+
+```text
+Training
+-------
+tumor-centered
+local patches
+high tumor exposure
+
+Deployment
+----------
+whole abdomen
+unknown tumor location
+many negative regions
+different anatomy
+```
+
+A model trained on local tumor-centered patches does not automatically become a full-volume segmenter.
 
 ---
 
-# Patch-Based Training vs Full-Volume Inference
+# Sliding-Window Full-Volume Inference
 
-Another major lesson of the project is that:
+A custom sliding-window implementation was developed.
 
-> **Training and deployment are not the same problem.**
-
-The model was trained using tumor-centered patches:
+For an approximately:
 
 ```text
-Full training CT
-    ↓
-known tumor location
-    ↓
-96 × 96 × 64 patch
-    ↓
-3D U-Net
+380 × 380 × 100
 ```
 
-During real clinical inference, however, tumor location is unknown.
-
-The model must therefore search an entire volume:
+volume, using:
 
 ```text
-Full clinical CT
-    ↓
-preprocessing
-    ↓
-sliding-window patches
-    ↓
-3D U-Net on each patch
-    ↓
-overlap aggregation
-    ↓
-full-volume probability map
-```
-
-A model trained on local tumor-centered patches does not automatically become a robust full-volume detector.
-
-This difference introduces additional problems:
-
-- unknown lesion location;
-- anatomical structures never emphasized during training;
-- patch-border effects;
-- overlapping prediction aggregation;
-- full-volume false positives;
-- domain shift.
-
----
-
-# Sliding-Window Inference
-
-The current full-volume inference uses:
-
-```text
-Patch size:
+patch:
 96 × 96 × 64
 
-Overlap:
-50%
+overlap:
+0.5
 ```
 
-For a resampled volume around:
+the window starts were:
 
 ```text
-380 × 380 × 100
+X:
+[0, 48, 96, 144, 192, 240, 284]
+
+Y:
+[0, 48, 96, 144, 192, 240, 284]
+
+Z:
+[0, 32, 36]
 ```
-
-the sliding-window grid contains:
-
-```text
-7 windows along X
-7 windows along Y
-3 windows along Z
 
 Total:
+
+```text
 147 patches
 ```
 
-Overlapping probabilities are averaged rather than simply overwritten.
-
-This produces a continuous full-volume tumor probability map.
+Overlapping probability maps are accumulated and averaged voxel-by-voxel.
 
 ---
 
-# Full-Volume DICOM Inference
+# External DICOM Inference
 
-The binary model was applied to a real DICOM liver CT that was not part of the original training dataset.
+Full-volume inference was applied to the external portal-venous CT.
 
-The result showed:
+Example output:
 
 ```text
-Tumor probability range:
-approximately 0.0 to 0.535
+Probability range:
+0.0 to approximately 0.535
 
-Mean tumor probability:
-approximately 0.0055
+Mean probability:
+approximately 0.00545
+
+Predicted positive voxels at threshold 0.5:
+2260
 ```
 
-The model produced sparse positive predictions but also substantial extra-hepatic responses.
+The probability response was sparse but frequently located outside the liver.
 
-This is consistent with domain shift and with the fact that the model was trained on a very small number of tumor-centered patches.
+This was interpreted as evidence of:
 
-The purpose of this experiment is therefore deployment-pipeline validation rather than clinical performance estimation.
+* domain shift
+* limited generalization
+* training/inference mismatch
+* insufficient negative sampling
+
+Lowering the threshold was not considered a valid solution because it would likely increase false positives.
 
 ---
 
 # DICOM SEG
 
-The selected TCGA-LIHC study also contains a DICOM SEG object:
+A liver DICOM SEG object from the same study was analyzed.
+
+Metadata:
 
 ```text
-Series Description:
-AIMI liver AI segmentation
+Modality:
+SEG
 
-Segment Label:
+Segment label:
 Liver
 
-Algorithm Type:
+Algorithm type:
 AUTOMATIC
 
-Algorithm Name:
+Algorithm:
 BAMF-Liver-CT
+
+Frames:
+43
 ```
 
-The SEG contains:
+A key discovery was that the DICOM SEG did **not** reference the portal-venous CT series.
 
-```text
-43 frames
-512 × 512 pixels
-binary values 0 / 1
-```
+It referenced a different CT series.
 
-The segmentation is automatically generated and must not be interpreted as manual clinical ground truth.
-
----
-
-# DICOM References and Geometry
-
-An important discovery was that the DICOM SEG did not reference the portal-venous CT series.
-
-The referenced `SeriesInstanceUID` corresponded instead to:
-
-```text
-Arterial 3.0 B40f
-84 images
-```
-
-This highlights a critical DICOM principle:
+This demonstrated an important rule:
 
 > **Matching array dimensions do not imply matching medical-image geometry.**
 
-A segmentation must be linked to the image series it actually references.
+DICOM relationships must be followed using:
 
-The SEG frames were mapped to CT slices through their referenced SOP Instance UIDs.
+* SeriesInstanceUID
+* SOPInstanceUID
+* frame-level references
 
-This produced a full liver mask:
+---
+
+# Arterial CT Series
+
+The DICOM SEG referenced the arterial CT series.
+
+The correct arterial series was downloaded and reconstructed.
+
+```text
+Slices:
+84
+
+Description:
+Arterial 3.0 B40f
+```
+
+The SEG frames were mapped to CT slices through referenced SOP Instance UIDs.
+
+Result:
 
 ```text
 CT slices:
@@ -933,101 +1126,131 @@ CT slices:
 SEG frames:
 43
 
-Matched frames:
+Matched SEG frames:
 43
 
-Reconstructed mask:
+Full mask shape:
+512 × 512 × 84
+
+Label values:
+[0, 1]
+
+Liver voxels:
+1,059,754
+
+Slices containing liver:
+43
+
+First liver slice:
+37
+
+Last liver slice:
+79
+```
+
+Visual overlay confirmed correct geometric alignment.
+
+---
+
+# DICOM SEG Is Not Manual Ground Truth
+
+The liver segmentation used in this phase is:
+
+```text
+automatic segmentation
+```
+
+generated by:
+
+```text
+BAMF-Liver-CT
+```
+
+It should therefore not be interpreted as independent manual ground truth.
+
+It is used as an anatomical prior and geometric reference.
+
+---
+
+# Arterial CT + Liver Mask Resampling
+
+Both arterial CT and liver mask were resampled into the same target space.
+
+Original:
+
+```text
 512 × 512 × 84
 ```
 
-The resulting liver mask was visually verified against the correct arterial CT series.
+Resampled:
+
+```text
+approximately 380 × 380 × 101
+```
+
+Target spacing:
+
+```text
+1.0 × 1.0 × 2.5 mm
+```
+
+The segmentation mask was resampled using nearest-neighbor interpolation.
 
 ---
 
-# Anatomically Constrained Inference
+# Anatomical Liver Constraint
 
-The arterial CT and its referenced DICOM liver segmentation were resampled into the same AI space:
+The binary tumor model was applied to the arterial CT.
+
+Raw prediction:
 
 ```text
-CT:
-380 × 380 × 101
-
-Liver mask:
-380 × 380 × 101
+4807 positive voxels
 ```
 
-The tumor model was first allowed to predict across the entire volume.
-
-Raw full-volume prediction:
+After applying the liver mask:
 
 ```text
-Predicted tumor voxels:
-4807
-```
-
-After restricting the prediction to the liver ROI:
-
-```text
-Predicted tumor voxels inside liver:
-625
-
-Predicted voxels removed outside liver:
-4182
-
-Fraction removed:
-approximately 87%
-```
-
-This demonstrates that an anatomical prior can dramatically reduce anatomically impossible predictions.
-
-However:
-
-> **An anatomical constraint can remove impossible predictions; it cannot prove that the remaining intra-organ prediction is a true lesion.**
-
-The remaining region must still be treated as a model-generated candidate rather than a confirmed tumor.
-
----
-
-# Hierarchical Medical Imaging Pipeline
-
-The experiment motivates a hierarchical inference strategy:
-
-```text
-Whole abdominal CT
-        ↓
-organ localization
-        ↓
-liver ROI
-        ↓
-tumor segmentation
-        ↓
-candidate lesion
-```
-
-rather than the simplified assumption:
-
-```text
-CT
-↓
-neural network
-↓
-final answer
-```
-
-This distinction is particularly important when moving from benchmark experiments toward real-world medical imaging systems.
-
----
-
-# Connected-Component Analysis in Physical Space
-
-The liver-constrained prediction contained:
-
-```text
-14 connected components
 625 positive voxels
 ```
 
-Because the resampled spacing is:
+Removed outside the liver:
+
+```text
+4182 voxels
+```
+
+Fraction removed:
+
+```text
+approximately 87%
+```
+
+This shows that the model produced many anatomically implausible extrahepatic responses.
+
+The liver mask acts as an anatomical prior.
+
+However:
+
+> **An anatomical constraint can remove impossible predictions; it cannot turn an incorrect intra-organ prediction into a true lesion.**
+
+The remaining intrahepatic candidate is therefore considered anatomically plausible, not clinically confirmed.
+
+---
+
+# Connected Components in Physical Space
+
+After liver-constrained inference:
+
+```text
+Positive voxels:
+625
+
+Connected components:
+14
+```
+
+With target spacing:
 
 ```text
 1.0 × 1.0 × 2.5 mm
@@ -1043,164 +1266,860 @@ The dominant component contained:
 
 ```text
 464 voxels
+```
+
+which corresponds to:
+
+```text
 1160 mm³
+=
 1.160 mL
 ```
 
-and represented approximately 74% of all positive intrahepatic voxels.
+This component represented approximately:
 
-Most other connected components were much smaller and had probabilities only slightly above the `0.5` decision threshold.
+```text
+74%
+```
 
-This illustrates another important concept:
-
-> **A volumetric prediction should be analyzed as a physical 3D object, not only as a collection of positive voxels.**
+of all intrahepatic positive voxels.
 
 ---
 
 # Physical Component Filtering
 
-An exploratory minimum component volume of:
+An exploratory minimum physical volume of:
 
 ```text
 50 mm³
 ```
 
-corresponding to:
+was used.
+
+With voxel volume:
+
+```text
+2.5 mm³
+```
+
+this corresponds to:
 
 ```text
 20 voxels
 ```
 
-was tested.
-
 Results:
 
 ```text
-Components before filtering:
-14
+Components:
+14 → 5
 
-Components kept:
-5
+Positive voxels:
+625 → 590
 
 Components removed:
 9
 
-Positive voxels before filtering:
-625
-
-Positive voxels after filtering:
-590
-
-Removed voxels:
+Voxels removed:
 35
 
-Removed voxel fraction:
+Fraction of positive voxels removed:
 5.6%
 ```
 
-The filter therefore removed approximately 64% of the connected components while removing only 5.6% of the positive voxels.
+This shows that the filter removed many tiny fragmented components while preserving most of the dominant predicted region.
 
-This indicates that the removed components were mainly very small fragments.
-
-![Arterial liver component filtering](docs/images/arterial_liver_component_filtering.png)
-
-The minimum-size threshold is an exploratory post-processing heuristic.
-
-It has not been clinically validated and cannot currently be claimed to improve tumor detection accuracy.
+The threshold is exploratory and is not clinically validated.
 
 ---
 
-# Voxel Count vs Physical Volume
+# Phase 6 — MONAI Integration
 
-A recurring lesson throughout the project is that voxel count alone is not equivalent to anatomical volume.
+After implementing the preprocessing, patch sampling, dataset handling and sliding-window inference logic from scratch, MONAI was integrated as a medical-imaging-specific framework to reproduce and standardize the same workflow.
 
-For a segmentation mask:
+The goal was not to replace the custom implementation blindly.
+
+Instead, MONAI was introduced only after the original pipeline had been developed and understood.
+
+The two approaches were then compared quantitatively.
+
+---
+
+# Why Both Custom and MONAI Implementations?
+
+The custom implementation was developed first to understand the mechanics of:
+
+* CT intensity preprocessing
+* windowing
+* normalization
+* voxel spacing
+* resampling
+* interpolation
+* tumor-centered patch extraction
+* augmentation
+* dataset organization
+* full-volume sliding-window inference
+* probability aggregation
+
+MONAI was then introduced to reproduce the same workflow using standardized medical-imaging components.
+
+This provides complementary benefits.
+
+## Custom Implementation
+
+Advantages:
+
+* transparency
+* direct control
+* educational value
+* easier inspection of intermediate steps
+* deeper understanding of the algorithms
+
+## MONAI Implementation
+
+Advantages:
+
+* standardized medical-imaging transforms
+* reusable pipeline components
+* Dataset and CacheDataset support
+* medical-imaging-aware metadata handling
+* reproducible preprocessing
+* reusable training transforms
+* standardized sliding-window inference
+* easier extension to larger research workflows
+
+---
+
+# MONAI Preprocessing
+
+The MONAI preprocessing pipeline reproduces the original custom workflow.
+
+Steps:
 
 ```text
-Physical volume
-=
-number of positive voxels
-×
-voxel width
-×
-voxel height
-×
-voxel depth
+Load NIfTI
+    ↓
+Ensure channel-first
+    ↓
+CT windowing
+    ↓
+Intensity scaling
+    ↓
+Physical-space resampling
+    ↓
+Tensor conversion
 ```
 
-Therefore, when resampling changes voxel spacing, the number of voxels can change substantially without implying the same change in physical organ volume.
+Target intensity range:
 
-This is particularly important when comparing segmentation masks before and after resampling.
+```text
+0 to 1
+```
+
+Target spacing:
+
+```text
+1.0 × 1.0 × 2.5 mm
+```
+
+Interpolation:
+
+```text
+CT:
+continuous interpolation
+
+Label:
+nearest neighbor
+```
+
+---
+
+# Custom vs MONAI Preprocessing
+
+The two pipelines were compared directly on `liver_0`.
+
+Results:
+
+```text
+Custom shape:
+(360, 360, 150)
+
+MONAI shape:
+(360, 360, 150)
+
+Custom intensity range:
+0.0 to 1.0
+
+MONAI intensity range:
+0.0 to 1.0
+
+Custom label values:
+[0, 1, 2]
+
+MONAI label values:
+[0, 1, 2]
+```
+
+Quantitative comparison:
+
+```text
+Image MAE:
+0.007038
+
+Label voxel agreement:
+99.9946%
+
+Mismatched label voxels:
+1056
+
+Label mismatch:
+0.00543%
+```
+
+Residual differences are mainly localized around interpolation-sensitive anatomical and segmentation boundaries.
+
+![Custom vs MONAI preprocessing](docs/images/monai_custom_preprocessing_comparison.png)
+
+This comparison demonstrates that the MONAI preprocessing pipeline reproduces the original custom behavior very closely.
+
+---
+
+# MONAI Dataset and CacheDataset
+
+A MONAI-compatible dataset pipeline was implemented using:
+
+```text
+Dataset
+CacheDataset
+```
+
+The 10-case experimental dataset is represented using dictionaries such as:
+
+```python
+{
+    "image": "data/multicase/images/liver_0.nii.gz",
+    "label": "data/multicase/labels/liver_0.nii.gz",
+    "case_id": "liver_0"
+}
+```
+
+---
+
+## Dataset Timing
+
+Standard `Dataset` first access:
+
+```text
+~3.36 seconds
+```
+
+`CacheDataset` construction for 10 cases:
+
+```text
+~114.46 seconds
+```
+
+After caching:
+
+```text
+First cached access:
+~0.00143 seconds
+
+Second cached access:
+~0.00012 seconds
+```
+
+Dataset and CacheDataset outputs were identical:
+
+```text
+Image MAE:
+0.0
+
+Label agreement:
+1.0
+```
+
+This demonstrates the main advantage of caching deterministic preprocessing before repeated training access.
+
+---
+
+# MONAI Tumor-Aware Training Transforms
+
+The first MONAI experiment used:
+
+```text
+RandCropByLabelClassesd
+```
+
+to sample tumor voxels.
+
+This successfully produced tumor-containing patches, but it did not fully reproduce the original custom strategy.
+
+The standard MONAI transform may center the patch on any tumor voxel, including a voxel near the tumor boundary.
+
+The original custom pipeline instead uses:
+
+```text
+tumor centroid
++
+controlled random shift
+```
+
+To preserve this behavior, a custom MONAI-compatible transform was implemented.
+
+---
+
+# Tumor-Centered MONAI Crop
+
+The MONAI training pipeline now uses:
+
+```text
+tumor centroid
++
+random shift
+```
+
+Maximum shift:
+
+```text
+X:
+±12 voxels
+
+Y:
+±12 voxels
+
+Z:
+±8 voxels
+```
+
+Patch size:
+
+```text
+96 × 96 × 64
+```
+
+Example:
+
+```text
+Tumor center:
+[222, 167, 123]
+
+Crop center:
+[225, 167, 115]
+
+Crop shift:
+[3, 0, -8]
+```
+
+Validation uses:
+
+```text
+tumor centroid
++
+[0, 0, 0]
+```
+
+with no random augmentation.
+
+This makes the validation crop deterministic and reproducible.
+
+---
+
+# MONAI Training Augmentation
+
+Training-time MONAI transforms include random 3D flips along the spatial axes.
+
+Image and segmentation label are transformed together.
+
+This preserves exact image-mask alignment.
+
+---
+
+# MONAI Sliding-Window Inference
+
+MONAI full-volume inference was implemented using:
+
+```text
+roi_size:
+96 × 96 × 64
+
+overlap:
+0.5
+```
+
+Uniform weighting is used in overlapping regions to remain as close as possible to the original custom probability-averaging strategy.
+
+---
+
+# MONAI Sliding-Window Reconstruction Test
+
+A synthetic identity model was used to validate only the sliding-window mechanics.
+
+Input:
+
+```text
+380 × 380 × 100
+```
+
+Output:
+
+```text
+1 × 2 × 380 × 380 × 100
+```
+
+Results:
+
+```text
+Reconstruction MAE:
+1.23e-08
+
+Maximum difference:
+4.17e-07
+```
+
+The differences are at floating-point numerical precision.
+
+This confirms correct:
+
+* patch extraction
+* overlap handling
+* stitching
+* full-volume reconstruction
+
+---
+
+# Custom vs MONAI Sliding-Window Inference
+
+The custom and MONAI sliding-window implementations were evaluated using:
+
+* the same `liver_7` volume
+* the same preprocessed input
+* the same binary U-Net checkpoint
+* the same patch size
+* the same overlap
+* the same threshold
+
+Custom function output:
+
+```text
+probability map
++
+binary mask
+```
+
+The raw probability maps were compared directly.
+
+Results:
+
+```text
+Probability MAE:
+0.001278
+
+Median probability difference:
+3.41e-13
+
+Maximum local probability difference:
+0.3426
+```
+
+At threshold:
+
+```text
+0.5
+```
+
+both implementations produced:
+
+```text
+Custom positive voxels:
+19,454
+
+MONAI positive voxels:
+19,454
+
+Mismatched mask voxels:
+0
+
+Mask voxel agreement:
+100%
+
+Dice custom vs MONAI:
+1.0
+```
+
+Therefore, the two sliding-window implementations produced identical final binary masks.
+
+Small localized probability differences did not change the final segmentation.
+
+---
+
+# End-to-End MONAI Inference Pipeline
+
+The complete MONAI inference workflow is now:
+
+```text
+NIfTI CT
+    ↓
+MONAI preprocessing
+    ↓
+resampling
+    ↓
+3D U-Net
+    ↓
+MONAI sliding-window inference
+    ↓
+tumor probability map
+    ↓
+threshold
+    ↓
+binary tumor mask
+```
+
+Example on `liver_7`:
+
+```text
+Probability shape:
+(383, 383, 216)
+
+Mask shape:
+(383, 383, 216)
+
+Probability range:
+0.0 to 0.5301
+
+Probability mean:
+~0.00380
+
+Threshold:
+0.5
+
+Positive voxels:
+19,918
+
+Positive voxel fraction:
+~0.0629%
+```
+
+The fully MONAI-based pipeline does not produce exactly the same positive-voxel count as the custom preprocessing pipeline.
+
+This is expected.
+
+The MONAI preprocessing performs affine-aware physical-space resampling, while the original implementation uses `scipy.ndimage.zoom`.
+
+Small interpolation differences can move probabilities around the threshold.
+
+This distinction is important:
+
+```text
+same sliding-window input
+→ custom and MONAI produce identical binary masks
+
+different preprocessing implementation
+→ small differences can propagate to final thresholded output
+```
+
+---
+
+# NIfTI vs DICOM
+
+An important conclusion of the project is that NIfTI and DICOM occupy different roles in the workflow.
+
+## NIfTI
+
+Typical characteristics:
+
+* research-oriented
+* compact 3D volume
+* convenient for machine learning
+* volume already reconstructed
+* commonly used with segmentation labels
+
+## DICOM
+
+Typical characteristics:
+
+* clinical acquisition format
+* many individual objects
+* rich metadata
+* spatial geometry
+* series relationships
+* patient-space information
+* interoperability
+* derived objects such as DICOM SEG
+
+Conceptually:
+
+```text
+DICOM
+    ↓
+clinical acquisition layer
+    ↓
+series selection
+    ↓
+spatial reconstruction
+    ↓
+HU conversion
+    ↓
+preprocessing
+    ↓
+AI-ready representation
+```
 
 ---
 
 # Key Technical Lessons
 
-Several broader lessons emerged from the project.
+## 1. Physical geometry matters
 
-### Medical-image geometry matters
+```text
+AI sees voxels.
+Clinical imaging happens in millimeters.
+```
 
-Array dimensions alone are not sufficient.
+Voxel spacing affects:
 
-Voxel spacing, patient-space orientation, slice position, and referenced image relationships must be respected.
-
-### NIfTI and DICOM serve different workflow roles
-
-NIfTI is highly convenient for research.
-
-DICOM exposes the acquisition and interoperability layer required for clinical imaging workflows.
-
-### Resampling is a physical operation
-
-It standardizes voxel geometry.
-
-It does not create new anatomical information.
-
-### Training is not deployment
-
-Tumor-centered training patches contain information that is unavailable during real inference.
-
-Full-volume inference requires an explicit search strategy.
-
-### Probabilities contain more information than hard labels
-
-A hard threshold can hide weak but structured model responses.
-
-Probability maps are therefore valuable for error analysis.
-
-### Anatomical constraints are useful but not diagnostic
-
-A liver ROI can remove impossible extra-hepatic predictions.
-
-It cannot prove that the remaining candidate is malignant.
-
-### Post-processing must be validated
-
-Connected-component filtering can remove obvious fragments, but threshold values must be independently validated before clinical interpretation.
+* lesion size
+* physical volume
+* patch coverage
+* anisotropy
+* resampling
+* cross-patient comparability
 
 ---
 
-# Current Limitations
+## 2. Training is not deployment
 
-The project currently has several important limitations.
+Tumor-centered patch training assumes known lesion location.
 
-The training dataset is extremely small.
+Clinical inference does not.
 
-The current validation subset contains only two patients.
+Whole-volume deployment requires:
 
-The model was trained using tumor-centered patches and therefore has limited exposure to the full anatomical variability of abdominal CT.
+* search over the entire anatomy
+* negative-region handling
+* sliding-window inference
+* stronger generalization
 
-The DICOM inference experiments involve domain shift between the training data and the external clinical imaging series.
+---
 
-The liver DICOM SEG used as an anatomical ROI is itself automatically generated rather than manual clinical ground truth.
+## 3. Same shape does not mean same geometry
 
-The current full-volume intrahepatic candidate does not have an independent tumor ground-truth annotation available in this workflow.
+Two medical images can have identical array dimensions but represent different patient-space locations.
 
-Therefore:
+DICOM geometry must be verified through metadata and references.
 
-> **No current metric or visualization should be interpreted as evidence of clinical diagnostic performance.**
+---
 
-The present project is a technical proof of concept and educational medical-imaging workflow.
+## 4. Probability is not diagnosis
+
+A high model probability does not prove that a lesion is malignant.
+
+Model outputs must be validated against independent ground truth.
+
+---
+
+## 5. Anatomical plausibility is not correctness
+
+Constraining predictions to the liver removes impossible extrahepatic detections.
+
+It does not prove that the remaining intrahepatic prediction is a tumor.
+
+---
+
+## 6. Voxel count is not physical volume
+
+After resampling:
+
+```text
+number of voxels changes
+```
+
+but anatomical volume must be evaluated using:
+
+```text
+voxel_count × voxel_volume
+```
+
+---
+
+## 7. Post-processing cannot recover missing information
+
+Connected-component filtering can:
+
+* remove tiny fragments
+* reduce false-positive components
+* improve anatomical cleanliness
+
+but cannot recover lesions that the network completely missed.
+
+---
+
+# Important Limitations
+
+The project is a proof of concept.
+
+Current limitations include:
+
+* only 8 training patients
+* only 2 validation patients
+* small experimental cohort
+* correlated shifted patches from the same patients
+* tumor-centered training distribution
+* limited full-volume negative sampling
+* external DICOM domain shift
+* threshold analysis performed on validation data
+* no independent external tumor ground truth for the DICOM case
+* automatic liver DICOM SEG rather than manual segmentation
+* no clinical validation
+
+No result in this repository should be interpreted as clinical diagnostic performance.
+
+---
+
+# Reproducibility Notes
+
+Random seeds were fixed where appropriate.
+
+The patient split uses:
+
+```text
+seed = 42
+```
+
+Data augmentation and patch sampling were also developed with reproducibility and explicit random-state handling in mind.
+
+Validation transforms are deterministic.
+
+---
+
+# Git and Data Safety
+
+Medical data are intentionally excluded from version control.
+
+The `.gitignore` includes:
+
+```text
+/data/
+outputs/
+
+*.dcm
+*.nii
+*.nii.gz
+
+*.pt
+*.pth
+*.ckpt
+
+__pycache__/
+.ipynb_checkpoints/
+```
+
+The leading slash in:
+
+```text
+/data/
+```
+
+is important.
+
+It ensures that only the root medical-data directory is ignored, while source-code modules under:
+
+```text
+src/data/
+```
+
+remain tracked.
+
+---
+
+# Testing
+
+The project contains focused tests for individual components.
+
+Examples include:
+
+```text
+preprocessing
+resampling
+normalization
+augmentation
+dataset loading
+patient splitting
+patch extraction
+training
+validation
+evaluation metrics
+DICOM discovery
+DICOM HU conversion
+DICOM slice sorting
+DICOM reconstruction
+DICOM SEG reconstruction
+sliding-window geometry
+MONAI preprocessing
+MONAI Dataset / CacheDataset
+MONAI tumor-aware transforms
+MONAI sliding-window inference
+custom vs MONAI inference
+end-to-end MONAI inference
+```
+
+Example commands:
+
+```powershell
+python -m tests.test_monai_preprocessing
+python -m tests.test_monai_dataset
+python -m tests.test_monai_training_transforms
+python -m tests.test_monai_sliding_window
+python -m tests.test_custom_vs_monai_sliding_window
+python -m tests.test_monai_inference_pipeline
+```
+
+A general syntax check can also be performed with:
+
+```powershell
+python -m compileall src tests
+```
+
+---
+
+# Current Project Status
+
+The project currently includes:
+
+```text
+NIfTI medical-image loading                 ✅
+CT windowing                                ✅
+Intensity normalization                     ✅
+Physical-space resampling                   ✅
+Tumor-centered patch extraction             ✅
+3D augmentation                             ✅
+Patient-level train/validation split        ✅
+3D U-Net                                    ✅
+Multiclass segmentation                     ✅
+Binary tumor segmentation                   ✅
+Voxel-wise evaluation                       ✅
+Lesion-wise evaluation                      ✅
+Connected-component analysis                ✅
+Probability-map inspection                  ✅
+Custom sliding-window inference             ✅
+DICOM discovery                             ✅
+DICOM series grouping                       ✅
+DICOM geometry reconstruction               ✅
+DICOM HU conversion                         ✅
+Real DICOM CT reconstruction                ✅
+DICOM SEG reconstruction                    ✅
+Anatomical liver constraint                 ✅
+Physical connected-component filtering      ✅
+MONAI preprocessing                         ✅
+MONAI preprocessing validation              ✅
+MONAI Dataset                               ✅
+MONAI CacheDataset                          ✅
+MONAI tumor-centered transforms             ✅
+MONAI deterministic validation transforms   ✅
+MONAI sliding-window inference              ✅
+Custom vs MONAI inference comparison        ✅
+End-to-end MONAI inference                  ✅
+```
 
 ---
 
@@ -1208,248 +2127,278 @@ The present project is a technical proof of concept and educational medical-imag
 
 ## Phase 1 — Medical Image Exploration
 
-- [x] Load NIfTI CT
-- [x] Load segmentation masks
-- [x] Inspect voxel spacing
-- [x] Explore label values
-- [x] Visualize CT slices
-- [x] Overlay tumor segmentation
-- [x] Identify tumor-rich slices
-- [x] Estimate tumor volume
+* [x] Load CT NIfTI volumes
+* [x] Load segmentation labels
+* [x] Inspect shape and spacing
+* [x] Inspect HU distribution
+* [x] Visualize axial slices
+* [x] Visualize tumor overlays
+* [x] Estimate physical tumor volume
+
+---
 
 ## Phase 2 — Preprocessing
 
-- [x] CT windowing
-- [x] Intensity normalization
-- [x] Voxel-spacing resampling
-- [x] Patient-level train/validation split
-- [x] 3D tumor-centered patches
-- [x] Shifted tumor-aware sampling
-- [x] Data augmentation
+* [x] CT windowing
+* [x] Intensity normalization
+* [x] Physical-space resampling
+* [x] Nearest-neighbor label resampling
+* [x] Tumor-centered patch extraction
+* [x] Boundary-safe patch extraction
+* [x] 3D data augmentation
+* [x] Patient-level train/validation split
+* [x] Multi-patch training dataset
+
+---
 
 ## Phase 3 — Deep Learning
 
-- [x] PyTorch Dataset
-- [x] DataLoader
-- [x] 3D U-Net
-- [x] Cross Entropy loss
-- [x] Dice loss
-- [x] Combined losses
-- [x] Weighted loss
-- [x] Binary tumor segmentation
-- [x] Training loop
-- [x] Validation loop
-- [x] Checkpoint saving
-- [x] Single-case overfitting test
-- [x] Multicase training
+* [x] Simple 3D CNN prototype
+* [x] 3D U-Net implementation
+* [x] Multiclass training
+* [x] Weighted loss
+* [x] Binary tumor formulation
+* [x] Binary U-Net training
+* [x] Checkpoint management
+* [x] Training and validation loops
+
+---
 
 ## Phase 4 — Evaluation
 
-- [x] Dice
-- [x] IoU / Jaccard
-- [x] Precision
-- [x] Recall / Sensitivity
-- [x] Tumor probability analysis
-- [x] Threshold exploration
-- [x] Lesion-wise evaluation
-- [x] Connected-component analysis
-- [x] Small-component filtering
-- [x] Visual error analysis
-- [x] CSV evaluation reporting
+* [x] Dice
+* [x] IoU
+* [x] Precision
+* [x] Recall
+* [x] Probability-map analysis
+* [x] Threshold analysis
+* [x] Lesion-wise evaluation
+* [x] Connected-component analysis
+* [x] Small-component filtering
+* [x] CSV evaluation outputs
+* [x] Prediction visualization
+
+---
 
 ## Phase 5 — Clinical Imaging Workflow
 
-- [x] Install and validate pydicom
-- [x] Load DICOM files
-- [x] Inspect DICOM metadata
-- [x] Group images by SeriesInstanceUID
-- [x] Sort slices using patient-space geometry
-- [x] Convert stored values to Hounsfield Units
-- [x] Reconstruct 3D DICOM CT volumes
-- [x] Validate real CT geometry
-- [x] Multiplanar DICOM visualization
-- [x] Reconstruct real liver CT
-- [x] DICOM preprocessing
-- [x] DICOM-to-AI resampling
-- [x] Sliding-window full-volume inference
-- [x] Explore DICOM SEG
-- [x] Reconstruct liver mask from DICOM SEG
-- [x] Validate SEG-to-CT references
-- [x] Anatomically constrained tumor inference
-- [x] Physical connected-component analysis
-- [x] Exploratory physical-size filtering
-- [ ] Further domain-shift analysis
-- [ ] Larger-patient full-volume evaluation
-- [ ] Tumor ground-truth integration for external DICOM studies
-- [ ] Improved liver-aware model training
-- [ ] DICOM SEG export of model predictions
-- [ ] RTSTRUCT exploration
+* [x] Install and integrate pydicom
+* [x] DICOM file discovery
+* [x] Series grouping
+* [x] Spatial slice sorting
+* [x] HU conversion
+* [x] 3D DICOM reconstruction
+* [x] Slice-spacing validation
+* [x] Real LIDC-IDRI CT reconstruction
+* [x] TCGA-LIHC liver CT reconstruction
+* [x] Portal-venous CT preprocessing
+* [x] Full-volume sliding-window inference
+* [x] External DICOM domain-shift analysis
+* [x] DICOM SEG inspection
+* [x] DICOM SEG reference validation
+* [x] Correct arterial CT reconstruction
+* [x] DICOM SEG mask reconstruction
+* [x] CT / SEG resampling
+* [x] Liver-constrained tumor inference
+* [x] Physical connected-component analysis
+
+Future work:
+
+* [ ] Further domain-shift analysis
+* [ ] Larger-patient full-volume evaluation
+* [ ] Tumor ground-truth integration for external DICOM studies
+* [ ] Improved liver-aware model training
+* [ ] DICOM SEG export of model predictions
+* [ ] RTSTRUCT exploration
+
+---
+
+## Phase 6 — MONAI Integration
+
+* [x] Install MONAI
+* [x] MONAI preprocessing pipeline
+* [x] Custom vs MONAI preprocessing comparison
+* [x] Visual preprocessing comparison
+* [x] MONAI Dataset
+* [x] MONAI CacheDataset
+* [x] Dataset / CacheDataset numerical equivalence
+* [x] MONAI tumor-aware patch sampling
+* [x] Custom MONAI tumor-centered crop
+* [x] Controlled training shifts
+* [x] Deterministic validation crop
+* [x] MONAI 3D augmentation
+* [x] MONAI sliding-window inference
+* [x] Sliding-window reconstruction test
+* [x] Custom vs MONAI probability comparison
+* [x] Custom vs MONAI binary-mask equivalence
+* [x] End-to-end MONAI NIfTI inference pipeline
+
+Future MONAI work:
+
+* [ ] Larger-scale MONAI training experiment
+* [ ] MONAI-based external DICOM inference integration
+* [ ] GPU performance benchmarking
+* [ ] MONAI-based experiment configuration
+* [ ] MONAI-native training pipeline comparison
 
 ---
 
 # Future Directions
 
-Several extensions are planned.
+Several extensions could significantly improve the project.
 
-## Larger Cohort Evaluation
+## Better Training Strategy
 
-The current two-patient validation set is too small for reliable performance estimation.
+Potential improvements:
 
-Future work should include:
-
-- more training patients;
-- more validation patients;
-- an independent test set;
-- cross-validation when appropriate.
+* liver-centered patches
+* negative liver patches
+* hard-negative mining
+* balanced tumor / non-tumor sampling
+* larger patient cohort
+* full-volume training experiments
 
 ---
 
-## Improved Sampling Strategy
+## External Validation
 
-Tumor-centered sampling improves minority-class exposure but creates a mismatch with full-volume inference.
+A meaningful next step would require:
 
-Future training could combine:
+* larger independent cohorts
+* tumor ground truth
+* scanner diversity
+* multiple institutions
+* different contrast phases
+
+---
+
+## Clinical Interoperability
+
+Potential future work:
 
 ```text
-tumor-centered patches
-+
-liver-centered negative patches
-+
-hard-negative patches
-+
-background patches
+AI prediction
+    ↓
+DICOM SEG generation
+    ↓
+clinical viewer
+    ↓
+radiologist review
 ```
 
-to expose the model to a broader anatomical distribution.
+RTSTRUCT interoperability could also be explored.
 
 ---
 
-## Organ-Aware Segmentation
+## Research User Interface
 
-The current experiments suggest that a hierarchical approach may be more robust:
+A future research workstation could include:
+
+* DICOM study loading
+* axial / coronal / sagittal visualization
+* liver segmentation overlay
+* AI tumor candidate overlay
+* probability visualization
+* lesion volume
+* connected-component analysis
+* accept / reject candidate review
+* DICOM SEG export
+
+Such an interface would currently be considered a research prototype rather than a clinically validated medical device.
+
+---
+
+# Possible Future Research Extension
+
+The project architecture could later be adapted to other oncological problems.
+
+One possible direction is ovarian cancer.
+
+Potential extensions include:
+
+* HGSOC imaging
+* radiomics
+* radiogenomics
+* BRCA / HRD-related analysis
+* age-aware analysis
+* molecular biomarkers
+* therapy-response modeling
+* precision oncology research
+
+These topics are outside the current liver segmentation scope and would be developed as separate research projects.
+
+---
+
+# Scientific Interpretation
+
+The main result of the project is not a single Dice score.
+
+The most important outcome is the construction of an end-to-end understanding of medical-imaging AI:
 
 ```text
-liver localization
-→ liver ROI
-→ tumor segmentation
-```
-
-This could be implemented either with:
-
-- a dedicated liver segmentation model;
-- externally provided liver masks;
-- multi-stage segmentation architectures;
-- multi-task learning.
-
----
-
-## Clinical Output Formats
-
-Future development may include converting model predictions back into clinical imaging formats such as:
-
-```text
-DICOM SEG
-```
-
-This would complete the loop:
-
-```text
-clinical DICOM input
-        ↓
-AI inference
-        ↓
-segmentation
-        ↓
-clinical DICOM output
-```
-
----
-
-# Technologies
-
-Current technologies include:
-
-```text
-Python
-NumPy
-SciPy
-NiBabel
-Matplotlib
-PyTorch
-pydicom
-```
-
-The architecture and repository are designed so that additional medical-imaging libraries such as MONAI can be introduced later where appropriate.
-
----
-
-# Reproducibility
-
-Random seeds are used in several experiments to improve reproducibility.
-
-However, full numerical reproducibility may still depend on:
-
-- PyTorch version;
-- hardware;
-- operating system;
-- numerical libraries;
-- interpolation implementation;
-- model initialization;
-- dataset ordering.
-
-Experiments should therefore record software versions and configuration when results become more formal.
-
----
-
-# Intended Purpose
-
-This repository is primarily a learning and research project intended to develop practical understanding of:
-
-- medical image representation;
-- CT physics and Hounsfield Units;
-- voxel geometry;
-- segmentation preprocessing;
-- 3D deep learning;
-- medical-image evaluation;
-- DICOM interoperability;
-- clinical-style AI inference pipelines.
-
-The goal is not only to train a segmentation network, but to understand how imaging data move through an end-to-end medical AI workflow.
-
----
-
-# Final Perspective
-
-A central lesson of this project is that medical imaging AI is much more than training a neural network.
-
-A realistic system must reason about:
-
-```text
-image acquisition
-+
-metadata
-+
+data
+↓
+physics
+↓
 geometry
-+
-intensity calibration
-+
+↓
 preprocessing
-+
-model architecture
-+
-training distribution
-+
-inference strategy
-+
-anatomical context
-+
-post-processing
-+
+↓
+deep learning
+↓
 evaluation
-+
+↓
+deployment
+↓
 clinical interoperability
 ```
 
-The model is only one component of the complete system.
+The project demonstrates both:
 
-Understanding the full pipeline is essential for moving from an experimental segmentation notebook toward a robust medical imaging workflow.
+```text
+from-scratch understanding
+```
+
+and:
+
+```text
+standardized MONAI-based implementation
+```
+
+This combination is intentional.
+
+---
+
+# Final Takeaways
+
+1. **Medical AI is a system, not only a model.**
+
+2. **Physical geometry and metadata are part of the AI problem.**
+
+3. **NIfTI and DICOM serve different roles in the imaging workflow.**
+
+4. **AI sees voxels; clinical imaging happens in millimeters.**
+
+5. **Training on tumor-centered patches is not equivalent to full-volume deployment.**
+
+6. **Matching array dimensions does not guarantee matching medical-image geometry.**
+
+7. **Anatomical constraints improve plausibility, not diagnostic certainty.**
+
+8. **Post-processing can remove noise but cannot recover missing lesions.**
+
+9. **Custom implementations help understand the mechanics.**
+
+10. **MONAI helps standardize and scale the workflow.**
+
+---
+
+# Disclaimer
+
+This repository is an educational and research project.
+
+The models, predictions, thresholds and post-processing methods have not been clinically validated.
+
+They must not be used for diagnosis, treatment planning or patient-care decisions.
+
+All medical-imaging results should be interpreted as experimental outputs only.
