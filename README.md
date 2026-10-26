@@ -99,6 +99,46 @@ The project currently uses:
 
 ---
 
+# Quick Start
+
+## Clone the repository
+
+```bash
+git clone https://github.com/ValerioCollocola/ct-tumor-segmentation.git
+cd ct-tumor-segmentation
+```
+
+## Install dependencies
+
+```bash
+python -m pip install -r requirements.txt
+```
+
+The project currently uses Python, PyTorch, MONAI, SciPy, NiBabel, Matplotlib and pydicom.
+
+Medical imaging datasets and trained model checkpoints are intentionally not included in the repository.
+
+## Run the MONAI validation workflow
+
+```bash
+python -m tests.test_monai_preprocessing
+python -m tests.test_monai_dataset
+python -m tests.test_monai_training_transforms
+python -m tests.test_monai_sliding_window
+python -m tests.test_custom_vs_monai_sliding_window
+python -m tests.test_monai_inference_pipeline
+```
+
+## Run a global syntax check
+
+```bash
+python -m compileall src tests
+```
+
+Some tests require the corresponding research datasets to be available locally under the expected `data/` directory structure.
+
+---
+
 # Repository Structure
 
 ```text
@@ -183,6 +223,24 @@ ct-tumor-segmentation/
 The `data/` and `outputs/` directories are intentionally excluded from Git.
 
 Medical-image files and model checkpoints are also protected by `.gitignore`.
+
+---
+
+# Data Sources and Attribution
+
+This repository does not redistribute medical imaging datasets.
+
+The project was developed using publicly available research datasets and medical imaging resources, including:
+
+* **Medical Segmentation Decathlon — Task03 Liver**, used for the initial NIfTI-based liver and tumor segmentation experiments.
+* **LIDC-IDRI**, used to validate the DICOM reconstruction and geometry workflow on a real CT series.
+* **TCGA-LIHC imaging data accessed through the NCI Imaging Data Commons (IDC)**, used for the liver DICOM workflow, including portal-venous and arterial CT series and a referenced DICOM SEG object.
+
+Users must obtain the original datasets directly from their respective providers and comply with the applicable licenses, terms of use and data-use requirements.
+
+No original DICOM series, NIfTI volumes, patient datasets or trained model checkpoints are distributed through this repository.
+
+Images included under `docs/images/` are derived visualizations created for technical documentation and research demonstration purposes.
 
 ---
 
@@ -516,30 +574,6 @@ Training loss decreased, but hard tumor Dice remained very low.
 
 Probability-map analysis showed that the model was learning a weak tumor-related signal even when the tumor class did not win the final `argmax`.
 
-Example behavior:
-
-```text
-liver_3
-
-mean tumor probability on GT tumor:
-~0.112
-
-mean tumor probability outside tumor:
-~0.059
-```
-
-and:
-
-```text
-liver_7
-
-mean tumor probability on GT tumor:
-~0.161
-
-mean tumor probability outside tumor:
-~0.086
-```
-
 This suggested that the model was learning some tumor discrimination but not enough for reliable multiclass hard segmentation.
 
 ---
@@ -548,22 +582,7 @@ This suggested that the model was learning some tumor discrimination but not eno
 
 Tumor probability thresholds were explored diagnostically.
 
-For example, on `liver_7`:
-
-```text
-threshold 0.10
-high recall, very low precision
-
-threshold 0.15
-Dice improves
-
-threshold 0.20+
-prediction collapses rapidly
-```
-
-These thresholds were evaluated on the same validation patients.
-
-They are therefore treated as exploratory and not as unbiased threshold selection.
+Threshold selection was performed on the same validation cases and is therefore treated as exploratory rather than as unbiased model selection.
 
 ---
 
@@ -594,8 +613,6 @@ tumor:
 1.90
 ```
 
-The binary model produced the first clearly non-zero hard tumor Dice on validation.
-
 ---
 
 # Binary Training Result
@@ -623,18 +640,18 @@ best validation loss
 best tumor Dice
 ```
 
-The main tumor-Dice checkpoint is:
+The main tumor-Dice checkpoint is stored locally under:
 
 ```text
 outputs/checkpoints/
 best_real_binary_unet_best_tumor_dice.pt
 ```
 
+Checkpoints are intentionally not distributed in this repository.
+
 ---
 
 # Phase 4 — Voxel-Wise Evaluation
-
-Best tumor-Dice checkpoint:
 
 ## liver_3
 
@@ -1480,8 +1497,6 @@ Residual differences are mainly localized around interpolation-sensitive anatomi
 
 ![Custom vs MONAI preprocessing](docs/images/monai_custom_preprocessing_comparison.png)
 
-This comparison demonstrates that the MONAI preprocessing pipeline reproduces the original custom behavior very closely.
-
 ---
 
 # MONAI Dataset and CacheDataset
@@ -1503,33 +1518,11 @@ The 10-case experimental dataset is represented using dictionaries such as:
 }
 ```
 
----
+Standard `Dataset` access performs deterministic preprocessing when a sample is requested.
 
-## Dataset Timing
+`CacheDataset` moves deterministic preprocessing cost to dataset initialization and makes repeated access substantially faster.
 
-Standard `Dataset` first access:
-
-```text
-~3.36 seconds
-```
-
-`CacheDataset` construction for 10 cases:
-
-```text
-~114.46 seconds
-```
-
-After caching:
-
-```text
-First cached access:
-~0.00143 seconds
-
-Second cached access:
-~0.00012 seconds
-```
-
-Dataset and CacheDataset outputs were identical:
+Dataset and CacheDataset outputs were numerically identical in the validation test:
 
 ```text
 Image MAE:
@@ -1539,7 +1532,7 @@ Label agreement:
 1.0
 ```
 
-This demonstrates the main advantage of caching deterministic preprocessing before repeated training access.
+Timing values depend on hardware and runtime conditions and are treated as implementation observations rather than benchmark claims.
 
 ---
 
@@ -1698,14 +1691,6 @@ The custom and MONAI sliding-window implementations were evaluated using:
 * the same patch size
 * the same overlap
 * the same threshold
-
-Custom function output:
-
-```text
-probability map
-+
-binary mask
-```
 
 The raw probability maps were compared directly.
 
@@ -1986,9 +1971,9 @@ The patient split uses:
 seed = 42
 ```
 
-Data augmentation and patch sampling were also developed with reproducibility and explicit random-state handling in mind.
-
 Validation transforms are deterministic.
+
+Randomized training transforms are explicitly controlled within the pipeline.
 
 ---
 
@@ -1996,7 +1981,7 @@ Validation transforms are deterministic.
 
 Medical data are intentionally excluded from version control.
 
-The `.gitignore` includes:
+The `.gitignore` includes protection for:
 
 ```text
 /data/
@@ -2029,6 +2014,8 @@ src/data/
 ```
 
 remain tracked.
+
+The repository history was also audited before public release to confirm that original medical images, checkpoints and local `data/` or `outputs/` contents were not committed.
 
 ---
 
@@ -2065,7 +2052,7 @@ end-to-end MONAI inference
 
 Example commands:
 
-```powershell
+```bash
 python -m tests.test_monai_preprocessing
 python -m tests.test_monai_dataset
 python -m tests.test_monai_training_transforms
@@ -2076,7 +2063,7 @@ python -m tests.test_monai_inference_pipeline
 
 A general syntax check can also be performed with:
 
-```powershell
+```bash
 python -m compileall src tests
 ```
 
@@ -2372,24 +2359,21 @@ This combination is intentional.
 # Final Takeaways
 
 1. **Medical AI is a system, not only a model.**
-
 2. **Physical geometry and metadata are part of the AI problem.**
-
 3. **NIfTI and DICOM serve different roles in the imaging workflow.**
-
 4. **AI sees voxels; clinical imaging happens in millimeters.**
-
 5. **Training on tumor-centered patches is not equivalent to full-volume deployment.**
-
 6. **Matching array dimensions does not guarantee matching medical-image geometry.**
-
 7. **Anatomical constraints improve plausibility, not diagnostic certainty.**
-
 8. **Post-processing can remove noise but cannot recover missing lesions.**
-
 9. **Custom implementations help understand the mechanics.**
-
 10. **MONAI helps standardize and scale the workflow.**
+
+---
+
+# License
+
+A repository license will be added at public release.
 
 ---
 
